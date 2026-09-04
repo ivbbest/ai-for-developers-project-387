@@ -104,8 +104,9 @@ R1–R9 приняты (R1 → D16), R10 отклонён — причина з�
 Атомарные действия владельца; без них шаги 1 и 4 падают в самый неудобный
 момент (урок 386: release-please умирает в конце последнего прогона).
 
-- [ ] P.1 Пользователь: секрет `HEXLET_ID` → Settings → Secrets and
-      variables → Actions (нужен `hexlet-check.yml`)
+- [x] P.1 Пользователь: секрет `HEXLET_ID` → Settings → Secrets and
+      variables → Actions (нужен `hexlet-check.yml`) — подтверждён в репе
+      2026-09-04 (`gh secret list`: HEXLET_ID от 2026-09-04T13:37Z)
 - [ ] P.2 Пользователь: Settings → Actions → General → **Allow GitHub Actions
       to create and approve pull requests** (нужен release-please на шаге 4).
       Область действия — только PR, создаваемые GITHUB_TOKEN воркфлоу: PR
