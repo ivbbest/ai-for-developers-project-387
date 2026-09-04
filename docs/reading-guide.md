@@ -139,9 +139,8 @@ git log --oneline --format='%an %s' -10     # авторы коммитов: а�
 ### V1. Целостность рабочего дерева (2 мин)
 
 ```bash
-git status --short            # до коммита каркаса: ?? .agents/ ?? .gitignore ?? AGENTS.md ?? docs/
-                              # после коммита контекста — чисто; обновить ожидание здесь
-git log --oneline -3          # main = каркас курса (6c8b049 и т.п.), кода приложения ещё нет
+git status --short            # чисто: каркас закоммичен (6da0890)
+git log --oneline -3          # main = каркас курса (6da0890 «First init project.», выше 6c8b049), кода приложения ещё нет
 git check-ignore -v input/ .opencode/ skills-lock.json   # все три — игнорируются
 git config core.fileMode      # false (WSL-права не шумят в diff)
 ```
