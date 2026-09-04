@@ -1,0 +1,25 @@
+# Локальная настройка и внутренние файлы (в git не попадают)
+.opencode/
+.env
+skills-lock.json
+
+# Окружение
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+
+# SQLite data (PII — имена/email гостей; включая WAL: *.db-wal/*.db-shm)
+backend/data/
+
+# Артефакты сборки (contract/dist — намеренно коммитится, это источник правды)
+backend/dist/
+frontend/dist/
+
+# Артефакты Playwright
+e2e/test-results/
+e2e/playwright-report/
+
+# Архив одноразовых аудитов (локально, в git не попадает)
+.agents/archive/
