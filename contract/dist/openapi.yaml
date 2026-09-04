@@ -1,0 +1,342 @@
+openapi: 3.0.0
+info:
+  title: Календарь звонков
+  description: 'Календарь звонков: типы событий, сетка слотов, бронирования. Время в контракте — UTC; фиксированная TZ сервиса — Europe/Moscow (рабочие часы 09:00–18:00 MSK, окно записи: сегодня … сегодня+13).'
+  version: 0.0.0
+tags: []
+paths:
+  /bookings:
+    post:
+      operationId: GuestApi_createBooking
+      description: Создать бронь. end = start + durationMinutes типа (сервер). Конфликт пересечения — 409 (E1, E2)
+      parameters: []
+      responses:
+        '201':
+          description: '201 Created: созданная бронь'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Booking'
+        '400':
+          description: '400 validation: кривые данные запроса (E4, E7, E8, E9, E10, E11, E12, E20)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: '404 not_found: тип события не найден (E6)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Тип не найден:
+                  summary: Тип не найден
+                  value:
+                    code: not_found
+                    message: 'Тип события не найден: meet-99'
+        '409':
+          description: '409 slot_conflict: пересечение интервалов с существующей бронью (E1, E2, E15)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Слот занят:
+                  summary: Слот занят
+                  value:
+                    code: slot_conflict
+                    message: 'Слот уже занят: 09:15–09:30 МСК пересекается с существующей бронью'
+        '413':
+          description: '413 payload_too_large: тело запроса больше лимита (E9, E18)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+    get:
+      operationId: OwnerApi_listBookings
+      description: 'Предстоящие встречи всех типов: start >= now (MSK), сортировка по start (E16)'
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Booking'
+  /event-types:
+    get:
+      operationId: GuestApi_listEventTypes
+      description: Каталог типов событий (все поля карточки; GET /{id} нет — C6)
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventType'
+    post:
+      operationId: OwnerApi_createEventType
+      description: Создать тип события; id задаёт владелец (паттерн C5), занятый id — 409 (E13)
+      parameters: []
+      responses:
+        '201':
+          description: '201 Created: созданный тип события'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventType'
+        '400':
+          description: '400 validation: кривые данные запроса (E4, E7, E8, E9, E10, E11, E12, E20)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: '409 duplicate_id: id типа уже занят (E13)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                id занят:
+                  summary: id занят
+                  value:
+                    code: duplicate_id
+                    message: 'id уже занят: meet-15'
+        '413':
+          description: '413 payload_too_large: тело запроса больше лимита (E9, E18)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventType'
+  /event-types/{id}/slots:
+    get:
+      operationId: GuestApi_getSlots
+      description: 'Сетка слотов дня со статусами. date обязателен: без него 400 (E20); дата кривая или вне окна — 400 (E4, E5); тип не найден — 404 (E6)'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/EventTypeId'
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          explode: false
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Slot'
+        '400':
+          description: '400 validation: кривые данные запроса (E4, E7, E8, E9, E10, E11, E12, E20)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: '404 not_found: тип события не найден (E6)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                Тип не найден:
+                  summary: Тип не найден
+                  value:
+                    code: not_found
+                    message: 'Тип события не найден: meet-15x'
+components:
+  schemas:
+    Booking:
+      type: object
+      required:
+        - id
+        - eventTypeId
+        - start
+        - end
+        - name
+        - email
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Server-side uuid (C5)
+        eventTypeId:
+          allOf:
+            - $ref: '#/components/schemas/EventTypeId'
+          description: Тип события
+        start:
+          type: string
+          format: date-time
+          description: Начало (UTC)
+        end:
+          type: string
+          format: date-time
+          description: 'Конец: сервер вычисляет start + durationMinutes типа (клиент не шлёт)'
+        name:
+          $ref: '#/components/schemas/GuestName'
+        email:
+          $ref: '#/components/schemas/GuestEmail'
+        notes:
+          $ref: '#/components/schemas/BookingNotes'
+        createdAt:
+          type: string
+          format: date-time
+          description: Момент создания брони (UTC)
+      additionalProperties:
+        not: {}
+      description: Бронирование
+    BookingCreate:
+      type: object
+      required:
+        - eventTypeId
+        - start
+        - name
+        - email
+      properties:
+        eventTypeId:
+          $ref: '#/components/schemas/EventTypeId'
+        start:
+          type: string
+          format: date-time
+          description: Начало слота из сетки типа; вне сетки — 400 (E7)
+        name:
+          $ref: '#/components/schemas/GuestName'
+        email:
+          $ref: '#/components/schemas/GuestEmail'
+        notes:
+          $ref: '#/components/schemas/BookingNotes'
+      additionalProperties:
+        not: {}
+      description: 'Тело POST /api/bookings: end сервер считает сам'
+    BookingNotes:
+      type: string
+      maxLength: 2000
+      description: Заметки гостя к брони
+    DurationMinutes:
+      type: integer
+      format: int32
+      minimum: 5
+      maximum: 540
+      multipleOf: 5
+      description: 'Длительность в минутах: 5–540, кратно 5 (E12)'
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - validation
+            - not_found
+            - slot_conflict
+            - slot_out_of_window
+            - payload_too_large
+            - duplicate_id
+            - server_error
+          description: Код ошибки; соответствие HTTP — в описании контракта (C7)
+        message:
+          type: string
+          description: Человекочитаемое сообщение на русском
+      additionalProperties:
+        not: {}
+      description: 'Единая модель ошибок: все ответы /api/* (4xx/5xx) — только она (C7, E18–E19); message — человекочитаемый, RU'
+    EventDescription:
+      type: string
+      maxLength: 500
+      description: Описание типа события
+    EventTitle:
+      type: string
+      minLength: 1
+      maxLength: 80
+      description: Название типа события
+    EventType:
+      type: object
+      required:
+        - id
+        - title
+        - durationMinutes
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/EventTypeId'
+          description: Читаемый id, паттерн ^[a-z0-9-]{1,40}$ (C5)
+        title:
+          $ref: '#/components/schemas/EventTitle'
+        description:
+          $ref: '#/components/schemas/EventDescription'
+        durationMinutes:
+          $ref: '#/components/schemas/DurationMinutes'
+      additionalProperties:
+        not: {}
+      description: 'Тип события: что можно забронировать'
+    EventTypeId:
+      type: string
+      pattern: ^[a-z0-9-]{1,40}$
+      description: Читаемый id типа события; задаёт владелец, уникален (C5)
+    GuestEmail:
+      type: string
+      format: email
+      description: Email гостя; валидация простая, регистр сохраняется (E11)
+    GuestName:
+      type: string
+      minLength: 1
+      maxLength: 120
+      description: Имя гостя; сервер нормализует trim (E10)
+    Slot:
+      type: object
+      required:
+        - start
+        - end
+        - status
+      properties:
+        start:
+          type: string
+          format: date-time
+          description: Начало (UTC)
+        end:
+          type: string
+          format: date-time
+          description: Конец (UTC)
+        status:
+          type: string
+          enum:
+            - available
+            - booked
+          description: 'Статус слота: available — свободен, booked — занят пересечением с бронью'
+      additionalProperties:
+        not: {}
+      description: 'Слот сетки дня. Сетка: от 09:00 MSK с шагом durationMinutes, пока end <= 18:00 MSK; прошедшие слоты текущего дня исключены; занятые возвращаются со статусом booked'
+servers:
+  - url: /api
+    description: 'Один источник: в проде бэкенд раздаёт статику фронта и API с одного порта'
+    variables: {}

@@ -1,0 +1,84 @@
+name: E2E
+
+# Юнит-тесты бэкенда и Playwright — на push/PR, затрагивающие приложение.
+# e2e-джоб идёт в контейнере node:24.20.0, а не в mcr-образе Playwright:
+# та же среда, что у локального e2e/Dockerfile и dev-обёртки, — одна версия
+# node на runner'е и дома, без расхождения сред.
+on:
+  push:
+    # только main: push фичевой ветки при открытом PR запускает два прогона
+    # одного коммита (push и pull_request) — лишняя трата раннер-минут
+    branches: [main]
+    paths:
+      - "e2e/**"
+      - "backend/**"
+      - "frontend/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/e2e.yml"
+  pull_request:
+    paths:
+      - "e2e/**"
+      - "backend/**"
+      - "frontend/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/e2e.yml"
+
+permissions:
+  contents: read
+
+# серия на ref: частые пуши в main не должны копить параллельные прогоны
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # имя checks, а не backend-unit: здесь же contract:check бэка и линт фронта
+  checks:
+    runs-on: ubuntu-latest
+    container:
+      image: node:24.20.0
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install workspace deps from lockfile
+        run: npm ci
+      - name: Typecheck backend
+        run: npm run typecheck -w backend
+      - name: Build backend
+        run: npm run build -w backend
+      - name: Backend unit tests
+        run: npm test -w backend
+      - name: Contract check (prism proxy)
+        run: npm run contract:check -w backend
+      - name: Lint frontend
+        run: npm run lint -w frontend
+
+  e2e:
+    runs-on: ubuntu-latest
+    container:
+      image: node:24.20.0
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install workspace deps from lockfile
+        run: npm ci
+      - name: Install e2e deps (standalone install)
+        run: npm ci
+        working-directory: e2e
+      - name: Install Chromium (тот же шаг, что в e2e/Dockerfile)
+        run: npx playwright install --with-deps chromium
+        working-directory: e2e
+      - name: Playwright suite (webServer поднимает бэк и vite сам)
+        run: npx playwright test
+        working-directory: e2e
+      - name: Upload traces & reports (retain-on-failure пишет в test-results/)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: playwright-test-results
+          path: e2e/test-results/
+          retention-days: 7
+          # иначе артефакт «успешного» прогона с пустой папкой падает ошибкой
+          if-no-files-found: ignore

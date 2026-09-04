@@ -1,0 +1,26 @@
+name: Release please
+
+# Релизный цикл по Conventional Commits (этап 4.3): feat → minor, fix → patch
+# (до 1.0 — по bump-minor-pre-major), BREAKING/`!` → major. На push в main:
+# 1) нет release-PR — создать (версия, CHANGELOG, bump package.json);
+# 2) release-PR смержен — тег + GitHub Release.
+# GITHUB_TOKEN: PR от release-please не запускает остальные workflow'ы на себе
+# (защита от рекурсии GitHub) — для release-PR это нормально, он чистый chore.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # third-party экшен с contents:write + pull-requests:write на push в main —
+      # пин по SHA (образец — opencode*.yml), тег @v5 мутабелен
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

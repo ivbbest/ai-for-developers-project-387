@@ -1,0 +1,55 @@
+name: Contract sync
+
+# Коммитить артефакт contract/dist/openapi.yaml — решение монорепо; значит,
+# он обязан совпадать с тем, что генерирует компилятор из contract/*.tsp.
+# Проверка: npm ci → tsp compile → diff «сохранённая копия артефакта vs
+# перегенерированный» (красный при рассинхроне).
+# Сравнение — через diff файлов, не `git diff`: в job-контейнере (node:24)
+# run-шаги не видят .git, созданный actions/checkout (git отвечает
+# "Not a git repository"), а смысл проверки —
+# «файл vs файл», git для него не нужен.
+on:
+  push:
+    # только main: push фичевой ветки при открытом PR = два прогона одного
+    # коммита (push и pull_request) — см. комментарий в e2e.yml
+    branches: [main]
+    paths:
+      - "contract/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/contract-sync.yml"
+  pull_request:
+    paths:
+      - "contract/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/contract-sync.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contract-sync-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    container:
+      # та же среда, что dev-обёртка docker-compose.dev.yml (node:24.20.0)
+      image: node:24.20.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Install workspace deps from lockfile
+        run: npm ci
+      - name: Save the committed artifact for comparison
+        run: cp contract/dist/openapi.yaml /tmp/committed-openapi.yaml
+      - name: Compile TypeSpec (warn-as-error)
+        run: npm run compile -w @cal-com/contract
+      - name: Fail if the committed openapi.yaml is stale
+        run: |
+          if ! diff -u /tmp/committed-openapi.yaml contract/dist/openapi.yaml; then
+            echo "::error::contract/dist/openapi.yaml расходится с contract/*.tsp — перегенерируйте: ./scripts/dev.sh npm run compile -w @cal-com/contract"
+            exit 1
+          fi
+          echo "contract/dist/openapi.yaml matches contract/*.tsp"

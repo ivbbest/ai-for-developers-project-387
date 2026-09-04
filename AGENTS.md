@@ -29,6 +29,28 @@
 | `input/` | Входные материалы курса (исключён локально через `.git/info/exclude`) | нет |
 | `.env` | Секреты — только пользователь | нет |
 
+## Команды (монорепо, npm workspaces)
+
+Корень — `cal-com` (workspaces: `contract`, `contract/mock-server`, `frontend`,
+`backend`); `e2e` — НЕ workspace (отдельный `npm ci`). В WSL-окружении без
+Linux-`node` на хосте каждая команда — через dev-обёртку `./scripts/dev.sh <cmd>`
+(контейнер `node:24.20.0`); e2e — `./scripts/e2e.sh` (сам поднимает браузерный
+контейнер). Полный CI-гейт (совпадает с job'ами `e2e.yml`/`contract-sync.yml`):
+
+```bash
+npm ci                                          # из корня, поднимает workspaces
+npm run compile -w @cal-com/contract            # TypeSpec → contract/dist/openapi.yaml (артефакт коммитится)
+npm run smoke -w @cal-com/contract              # Prism-smoke контракта, 27 проверок
+npm run smoke -w @cal-com/mock-server           # smoke стаба, 46 проверок
+npm test -w backend                             # vitest, 72 теста (71 декларация + 1 генерируется циклом)
+npm run contract:check -w backend               # prism-proxy, 9 проверок + гейт Violation
+npm run typecheck -w backend
+npm run build -w backend
+npm run lint -w frontend
+./scripts/e2e.sh                                # Playwright, 9 сценариев
+docker build -t cal-com .                       # прод-образ (multi-stage), smoke запущенного контейнера
+```
+
 ## Секреты и `.env` (НЕ читать)
 
 - `.env` и секреты (API-ключи, пароли, токены) — **вне контекста**, считать несуществующими.
