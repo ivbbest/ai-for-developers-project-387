@@ -6,12 +6,12 @@ name: Contract sync
 # перегенерированный» (красный при рассинхроне).
 # Сравнение — через diff файлов, не `git diff`: в job-контейнере (node:24)
 # run-шаги не видят .git, созданный actions/checkout (git отвечает
-# "Not a git repository" — падение 2026-09-02 в PR #7), а смысл проверки —
+# "Not a git repository"), а смысл проверки —
 # «файл vs файл», git для него не нужен.
 on:
   push:
-    # только main: push фичевой ветки при открытом PR = два параллельных рана
-    # одного коммита, а self-hosted runner делит один /__w workspace (см. e2e.yml)
+    # только main: push фичевой ветки при открытом PR = два прогона одного
+    # коммита (push и pull_request) — см. комментарий в e2e.yml
     branches: [main]
     paths:
       - "contract/**"

@@ -5,6 +5,7 @@
 (`./scripts/dev.sh npm run smoke -w @cal-com/contract`); реализация бэкенда
 (этап 3) сверена с этим контрактом через prism-proxy (`npm run contract:check -w backend`).
 Связанный issue: https://github.com/ivbbest/ai-for-developers-project-386/issues/6
+(предшественник этого репозитория: контракт разрабатывался там)
 Дата: 2026-09-01
 
 ## Цель
@@ -186,11 +187,11 @@ server_error→500. `duplicate_id` добавлен при реализации 
 
 - Ревью-находки К1–К7 и их решения — этот файл (C1–C7, «Правила занятости»).
 - Аудит второго прохода (N1–N9, план правок A–D, верификация фактов по исходникам
-  инструментов) — `architecture-audit.md` (архив: `.agents/archive/`, локально); правки A1–A5 внесены в этот файл
+  инструментов) — вне публичного дерева; правки A1–A5 внесены в этот файл
   и `docs/archive/work-plan.md`.
 - Детальный план реализации — `docs/project-understanding.md` §9 (шаг 1), §11 (решения 7–16).
 - План работ по этапам — `docs/archive/work-plan.md`; разбор превентивных проверок —
-  `retrospective.md` (архив: `.agents/archive/`, локально).
+  в git-истории.
 - Анализ входных материалов — `docs/project-understanding.md`.
 - `durationMinutes` «кратно 5»: в контракте — `@multipleOf(5)` через
   `@typespec/json-schema` (optional peer эмиттера openapi3); в сгенерированном
