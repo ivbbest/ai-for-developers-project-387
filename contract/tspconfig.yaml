@@ -1,0 +1,12 @@
+# Эмиттер OpenAPI 3. По умолчанию эмиттер пишет JSON с именем по шаблону —
+# yaml и точное имя файла задаём явно (contract/dist/openapi.yaml коммитим
+# как источник правды).
+emit:
+  - "@typespec/openapi3"
+options:
+  "@typespec/openapi3":
+    emitter-output-dir: "{project-root}/dist"
+    file-type: yaml
+    output-file: openapi.yaml
+    # E8: неизвестные поля тела → 400 — схема строгая и для фронта, и для бэка
+    seal-object-schemas: true

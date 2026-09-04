@@ -1,0 +1,13 @@
+{
+  "name": "@cal-com/mock-server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "smoke": "bash smoke.sh"
+  },
+  "dependencies": {
+    "express": "5.2.1"
+  }
+}

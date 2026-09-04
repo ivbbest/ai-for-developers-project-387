@@ -1,0 +1,45 @@
+# Dev-обёртка: все команды разработки (tsp, vite, npm, тесты) — в контейнере node:24.
+# Причина: в WSL нет Linux-`node` (npm — Windows-обёртка), DrvFs /mnt/e медленный,
+# а Linux-контейнер совпадает с прод-образом (нативные модули консистентны).
+# Использование: ./scripts/dev.sh <cmd…>  (или docker compose -f docker-compose.dev.yml run --rm dev <cmd…>)
+services:
+  dev:
+    image: node:24.20.0
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    # host-сеть: два прогона обёртки (стаб + vite) видят друг друга через
+    # localhost (vite-прокси → :4020), а браузер хоста — dev-сервер на :5173.
+    # Без неё `docker compose run` поднимает изолированные сети — связки нет.
+    # WSL2 проксирует localhost из VM на Windows-браузер штатно.
+    network_mode: host
+    environment:
+      # не мешать в неинтерактивном прогоне (npm update-notifier, color)
+      - NO_COLOR=1
+      # хостовые env доходят до контейнера только так: `PORT=3001 ./scripts/dev.sh …`
+      # работает без правки этого файла; пустое значение сохраняет ветку
+      # «PORT не задан» у сервера (решение §11.13 — падать с внятной ошибкой)
+      - PORT=${PORT:-}
+      - MOCK_PORT=${MOCK_PORT:-}
+      - PRISM_PORT=${PRISM_PORT:-}
+      - VITE_API_TARGET=${VITE_API_TARGET:-}
+      - DATABASE_PATH=${DATABASE_PATH:-}
+      - NOW=${NOW:-}
+    stdin_open: true
+    tty: true
+    command: bash
+
+  # e2e (этап 4): node:24 + Chromium из одного образа — та же база и ABI
+  # нативных модулей, что у dev-сервиса (общий volume с node_modules).
+  # Запуск: ./scripts/e2e.sh [playwright args…]
+  e2e:
+    build:
+      context: ./e2e
+    working_dir: /workspace/e2e
+    volumes:
+      - .:/workspace
+    network_mode: host
+    environment:
+      - NO_COLOR=1
+    stdin_open: true
+    tty: true

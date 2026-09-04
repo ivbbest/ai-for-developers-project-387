@@ -1,0 +1,75 @@
+name: Docker build
+
+# Из независимого ревью: прод-образ нигде не собирался — сломанный Dockerfile
+# прошёл бы все зелёные проверки. Только сборка + локальный smoke контейнера,
+# без публикации в registry.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - "backend/**"
+      - "frontend/**"
+      - "contract/package.json"
+      - ".github/workflows/docker.yml"
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - "package.json"
+      - "package-lock.json"
+      - "backend/**"
+      - "frontend/**"
+      - "contract/package.json"
+      - ".github/workflows/docker.yml"
+
+permissions:
+  contents: read
+
+# серия на ref: частые пуши не должны копить параллельные ~3-мин сборки образа
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Build image
+        run: docker build -t cal-com:ci .
+      - name: Smoke the built image (API + static + non-root)
+        run: |
+          # EXIT-ловушка: контейнер снимается и при провале smoke (exit 1),
+          # а не только на успешной ветке
+          trap 'docker rm -f cal-com-smoke >/dev/null 2>&1 || true' EXIT
+          docker run -d --name cal-com-smoke -p 3000:3000 cal-com:ci
+          ok=""
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3000/api/event-types > /tmp/catalog.json; then ok=1; break; fi
+            sleep 2
+          done
+          if [ -z "$ok" ]; then docker logs cal-com-smoke; exit 1; fi
+          grep -q meet-15 /tmp/catalog.json
+          curl -sf http://localhost:3000/ | grep -q 'id="root"'
+          curl -s http://localhost:3000/api/whatever -o /dev/null -w '%{http_code}\n' | grep -q 404
+          health=""
+          for i in $(seq 1 24); do
+            health=$(docker inspect --format '{{.State.Health.Status}}' cal-com-smoke)
+            [ "$health" = "healthy" ] && break
+            sleep 5
+          done
+          if [ "$health" != "healthy" ]; then
+            echo "health: $health"; docker logs cal-com-smoke; exit 1
+          fi
+          # шаг называется «+ non-root» — и теперь действительно это проверяет:
+          # без ветки удаление USER node из Dockerfile проходило зелёным
+          user=$(docker inspect --format '{{.Config.User}}' cal-com-smoke)
+          if [ "$user" != "node" ]; then
+            echo "образ должен работать от node, получили USER='$user'"; exit 1
+          fi

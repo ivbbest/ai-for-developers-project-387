@@ -1,0 +1,24 @@
+# Контекст сборки — только исходники: зависимости ставит npm ci внутри образа.
+.git
+**/node_modules
+# dist собираются в стадии build; host-артефакты (включая contract/dist) не нужны
+**/dist
+backend/data
+# секреты и PII в образ не попадают: не только корневой файл, но и вложенные
+# (backend/.env, frontend/.env.local) и их локальные варианты
+**/.env*
+**/*.db
+**/*.db-wal
+**/*.db-shm
+# внутренняя инфраструктура: docs/ и .agents/ вырезаны ниже, одиночный
+# корневой файл попадал в прод-образ через COPY . .
+AGENTS.md
+# не нужно рантайму
+e2e/
+contract/mock-server/
+input/
+docs/
+.agents/
+.opencode/
+.github/
+*.log

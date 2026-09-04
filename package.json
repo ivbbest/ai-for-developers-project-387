@@ -1,0 +1,12 @@
+{
+  "name": "cal-com",
+  "version": "1.0.2",
+  "private": true,
+  "description": "Call booking calendar: contract + frontend + backend (monorepo, NPM workspaces)",
+  "workspaces": [
+    "contract",
+    "contract/mock-server",
+    "frontend",
+    "backend"
+  ]
+}
