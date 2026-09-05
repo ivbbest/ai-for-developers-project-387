@@ -43,7 +43,11 @@ jobs:
           # а Express не матчит «//api/...» — режем слэш здесь, а не в настройке
           BASE="${URL%/}"
           curl -sL --retry 3 --retry-delay 30 "$BASE" -o /dev/null
-          curl -fsS "$BASE/api/event-types" | head -c 200
+          # best-effort: site-down должен дойти до агента как «замер не снят»,
+          # а не валить job здесь (замечание ревью PR #20, inline L46);
+          # настоящий гейт замера — Lighthouse с continue-on-error ниже
+          curl -fsS "$BASE/api/event-types" | head -c 200 || \
+            echo "::warning::API не ответил — warm-up продолжаем, решение за Lighthouse"
 
       - name: Lighthouse
         # continue-on-error осознанный: site-down должен превратиться в
