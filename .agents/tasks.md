@@ -62,7 +62,9 @@ R1–R9 приняты (R1 → D16), R10 отклонён — причина з�
 Р10–Р16/В1–В3) + #34 (независимый аудит, Р2/Р4 исполнены) + #35/#36 (память) —
 все слиты; три ревью-документа перенесены в `docs/archive/` (PR #37, main
 `e2ae2e1`).
-main — `b0d0c6e`, hexlet-check / E2E / Release please зелёные. Код приложения с
+main — `e2ae2e1` (после мержа #37 hexlet-check / Release please зелёные:
+33970610367 / 33970610445; E2E не перепрогонялся — path-filter, docs-изменения
+его не касаются). Код приложения с
 релиза не менялся (`git log 5875ed8..main -- contract backend frontend e2e
 Dockerfile` пуст), path-filtered CI (docker, contract-sync) перепрогона не
 требуют — их последние зелёные прогоны актуальны.
