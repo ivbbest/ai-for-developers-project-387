@@ -1,0 +1,96 @@
+name: opencode-schedule
+
+# Ночная проверка деплоя: сырые данные собирает обычный шаг (Lighthouse CLI),
+# агент превращает report.json в markdown-отчёт и issue по находкам.
+# Cron 03:00 UTC = 06:00 МСК: не чаще раза в сутки (D8), утром команда читает
+# отчёт. workflow_dispatch рядом — ручной прогон без ожидания ночи.
+# APP_URL — repository variable (адрес публичный, не секрет).
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: opencode-schedule
+      cancel-in-progress: false
+    steps:
+      - name: Guard APP_URL
+        run: |
+          test -n "${{ vars.APP_URL }}" || {
+            echo "::error::APP_URL не задана (Settings → Secrets and variables → Actions → Variables, задача 1.6 реестра) — отчёт по пустому адресу бессмысленен"
+            exit 1
+          }
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Warm-up (Render free-tier холодный 30-60 с)
+        env:
+          URL: ${{ vars.APP_URL }}
+        run: |
+          # нормализация: переменная могла быть задана с завершающим слэшем,
+          # а Express не матчит «//api/...» — режем слэш здесь, а не в настройке
+          BASE="${URL%/}"
+          curl -sL --retry 3 --retry-delay 30 "$BASE" -o /dev/null
+          # best-effort: site-down должен дойти до агента как «замер не снят»,
+          # а не валить job здесь (замечание ревью PR #20, inline L46);
+          # настоящий гейт замера — Lighthouse с continue-on-error ниже
+          curl -fsS "$BASE/api/event-types" | head -c 200 || \
+            echo "::warning::API не ответил — warm-up продолжаем, решение за Lighthouse"
+
+      - name: Lighthouse
+        # continue-on-error осознанный: site-down должен превратиться в
+        # текстовый отчёт «проверка не удалась», а не красный прогон без
+        # объяснений (утренняя команда читает issue, а не логи). Без этого
+        # флага job прерывался бы здесь и `if: success()` на агенте был бы
+        # тривиально правдой (замечание ревью PR #20)
+        continue-on-error: true
+        run: |
+          npx lighthouse "${{ vars.APP_URL }}" \
+            --output=json --output-path=report.json \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --max-wait-for-load=60000
+
+      - name: Run opencode report
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          REPORT_PRESENT: ${{ hashFiles('report.json') != '' }}
+        uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
+        with:
+          model: opencode/big-pickle
+          share: false
+          prompt: |
+            Если файла report.json нет (замер не снят: деплой недоступен или
+            Lighthouse упал) — не выдумывай анализ: создай или обнови issue с
+            меткой perf-report текстом «ночная проверка не состоялась, замер
+            не снят» и остановись.
+            Иначе: проанализируй report.json (Lighthouse по продакшен-деплою
+            этого проекта): категории Performance / Accessibility / Best
+            Practices. Для каждой из 3 главных проблем: что именно замерено,
+            почему это болит пользователю календаря звонков, что делать.
+            Сохрани вывод в perf-report.md (markdown-отчёт, только по данным
+            замера). Затем по находкам создай issue с меткой perf-report и
+            текстом «что делаем»; если открытый issue с меткой perf-report
+            уже есть — обнови его комментарием со свежими цифрами, новый не
+            создавай.
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-report-${{ github.run_number }}
+          path: |
+            report.json
+            perf-report.md
+          if-no-files-found: warn
