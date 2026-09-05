@@ -1,0 +1,84 @@
+{
+  "fetched": "2026-09-05T10:17:20.255Z",
+  "url": "https://ai-for-developers-project-387-670a.onrender.com/",
+  "categories": {
+    "performance": {
+      "score": 0.77,
+      "title": "Performance"
+    },
+    "accessibility": {
+      "score": 1,
+      "title": "Accessibility"
+    },
+    "best-practices": {
+      "score": 1,
+      "title": "Best Practices"
+    },
+    "seo": {
+      "score": 0.9,
+      "title": "SEO"
+    },
+    "agentic-browsing": {
+      "score": 1,
+      "title": "Agentic Browsing"
+    }
+  },
+  "audits": [
+    {
+      "id": "total-blocking-time",
+      "title": "Total Blocking Time",
+      "score": 0.27,
+      "numericValue": 1005.4999999999998,
+      "displayValue": "1,010 ms",
+      "description": "Sum of all time periods between FCP and Time to Interactive, when task length exceeded 50ms, expressed in milliseconds. [Learn more about the Total Blocking Time metric](https://developer.chrome.com/d"
+    },
+    {
+      "id": "max-potential-fid",
+      "title": "Max Potential First Input Delay",
+      "score": 0,
+      "numericValue": 981.9999999999998,
+      "displayValue": "980 ms",
+      "description": "The maximum potential First Input Delay that your users could experience is the duration of the longest task. [Learn more about the Maximum Potential First Input Delay metric](https://developer.chrome"
+    },
+    {
+      "id": "mainthread-work-breakdown",
+      "title": "Minimize main-thread work",
+      "score": 0,
+      "numericValue": 2301.1439999999902,
+      "displayValue": "2.3 s",
+      "description": "Consider reducing the time spent parsing, compiling and executing JS. You may find delivering smaller JS payloads helps with this. [Learn how to minimize main-thread work](https://developer.chrome.com"
+    },
+    {
+      "id": "unused-javascript",
+      "title": "Reduce unused JavaScript",
+      "score": 0,
+      "numericValue": 300,
+      "displayValue": "Est savings of 64 KiB",
+      "description": "Reduce unused JavaScript and defer loading scripts until they are required to decrease bytes consumed by network activity. [Learn how to reduce unused JavaScript](https://developer.chrome.com/docs/lig"
+    },
+    {
+      "id": "meta-description",
+      "title": "Document does not have a meta description",
+      "score": 0,
+      "numericValue": null,
+      "displayValue": null,
+      "description": "Meta descriptions may be included in search results to concisely summarize page content. [Learn more about the meta description](https://developer.chrome.com/docs/lighthouse/seo/meta-description/)."
+    },
+    {
+      "id": "network-dependency-tree-insight",
+      "title": "Network dependency tree",
+      "score": 0,
+      "numericValue": null,
+      "displayValue": null,
+      "description": "[Avoid chaining critical requests](https://developer.chrome.com/docs/performance/insights/network-dependency-tree) by reducing the length of chains, reducing the download size of resources, or deferri"
+    },
+    {
+      "id": "render-blocking-insight",
+      "title": "Render-blocking requests",
+      "score": 0.5,
+      "numericValue": null,
+      "displayValue": null,
+      "description": "Requests are blocking the page's initial render, which may delay LCP. [Deferring or inlining](https://developer.chrome.com/docs/performance/insights/render-blocking) can move these network requests ou"
+    }
+  ]
+}
