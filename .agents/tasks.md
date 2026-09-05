@@ -138,7 +138,7 @@ R1–R9 приняты (R1 → D16), R10 отклонён — причина з�
 > `feat/…`: коммиты переноса — `chore:`/`docs:` (D16), чтобы имя не расходилось
 > с содержанием.
 
-**Текущий статус (2026-09-04): перенос замержен.** `chore/migrate-app`
+**Текущий статус (2026-09-05): шаг 1 закрыт, кроме деплоя 1.6.** `chore/migrate-app`
 (`146507c` перенос + `e9a3fbb` актуализация) влита в main PR #2
 https://github.com/ivbbest/ai-for-developers-project-387/pull/2 (main `459e8c2`).
 1.5d: hexlet-check на PR зелёный
@@ -150,8 +150,10 @@ Docker https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/339
 hexlet-check https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806753 ·
 Release please https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806712 —
 все зелёные, **release-PR нет, тегов нет (гейт D16 ✓)**. P.2 включён
-(`can_approve_pull_request_reviews: true`, проверено API). Остаётся в шаге 1:
-план развития 1.4+1.5c (ветка `docs/development-plan`) и деплой 1.6.
+(`can_approve_pull_request_reviews: true`, проверено API). План развития (1.4,
+1.5c) влит PR #7 → main `1a888ea`, hexlet-check/release-please на main зелёные
+https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33950502413.
+Остаётся в шаге 1: деплой 1.6 (пользователь).
 
 
 
@@ -273,24 +275,26 @@ Release please https://github.com/ivbbest/ai-for-developers-project-387/actions/
 
 ### 1.4 План развития (`docs/development-plan.md`)
 
-- [ ] 1.4a **До написания** — финализировать состав: 1 баг + 1 фича
-      (обязательный минимум), второй баг — только если воспроизведён.
-      Зафиксировать список в context.md (пункт закрытия: список согласован)
-- [ ] 1.4b Воспроизвести баг-кандидат 1 (длинные email: контракт длину не
-      ограничивает, zod режет 254) на демо/локально — иначе менять кандидата
-- [ ] 1.4c Баг-кандидат 2 (расходование «свободно/занято» при двух вкладках
-      после полуночи, E3-ветка): проверить воспроизводимость; не
-      воспроизводится — в план не включать (минимум и так закрыт)
-- [ ] 1.4d Фича-кандидат 1: отмена брони (в контракте нет DELETE; жалоба
-      «записался не на то время — не могу отменить, только писать в чат»)
-- [ ] 1.4e Фича-кандидат 2 (по желанию): напоминание о встрече / список
-      прошедших
-- [ ] 1.4f Написать план: формат каждой записи — название · жалоба от первого
-      лица без упоминания файлов/решений · ожидаемое поведение · оценка
-      объёма; жалобы **текстовые** (скриншотов агент на big-pickle не видит),
-      email/имена в примерах — вымышленные (публичный репо)
-- [ ] 1.4g Пометить в плане, какой шаг курса (issue/triage/fix) берёт каждую
-      запись — это будущие issues шагов 3–5
+- [x] 1.4a Состав финализирован: баг — длинный email (воспроизведён), фича —
+      отмена брони; второй баг исключён (не воспроизводится, см. 1.4c);
+      список зафиксирован в context.md — 2026-09-05, PR #7
+- [x] 1.4b Воспроизведён локально на main-коде: POST 255-символьного email →
+      `400` «слишком длинный», 254 → `201`; контракт лимита не объявляет —
+      2026-09-05, факт зафиксирован в плане (main `1a888ea`, раздел «Баг 1»)
+- [x] 1.4c Кандидат 2 проверен и НЕ воспроизведён как баг: параллельные POST
+      одного слота → `201`+`409 slot_conflict` (транзакция), «протухание»
+      через полночь → `400 slot_out_of_window`, фронт обрабатывает оба
+      (confirm.tsx:126, баннер+перезапрос). В план не включён, причина —
+      в разделе «Исключено»
+- [x] 1.4d Фича-кандидат 1 подтверждён: DELETE в контракте/бэке/фронте
+      отсутствует; лёг в план
+- [x] 1.4e Фича-кандидат 2 (напоминания) — отложен без срока: потребность
+      не подтверждена, минимум закрыт (записано в «Исключено» плана)
+- [x] 1.4f План написан в требуемом формате, жалобы текстовые, данные
+      вымышленные; PR #7 → main `1a888ea`
+      https://github.com/ivbbest/ai-for-developers-project-387/pull/7
+      (ревью `/oc review` в треде: 2 замечания приняты коммитом `46e7e96`)
+- [x] 1.4g Шаг курса помечен в каждой записи плана (issue — шаг 3, PR — шаг 4)
 
 ### 1.5 Выход в GitHub
 
@@ -299,7 +303,8 @@ Release please https://github.com/ivbbest/ai-for-developers-project-387/actions/
       на шаге 1 и обесценит демо D9), hygiene-греп чист
 - [x] 1.5b (`e9a3fbb`) Коммит-чекпоинт «актуализация» (1.2) — тип **`chore:`**/**`docs:`**
       (D16)
-- [ ] 1.5c Коммит-чекпоинт «план развития» (1.4) — тип **`docs:`** (D16)
+- [x] 1.5c Коммит-чекпоинт «план развития» (1.4) — тип **`docs:`** (D16):
+      `c46e8c0` + фикс по ревью `46e7e96`, влиты squash в main `1a888ea` (PR #7)
 - [x] 1.5d Проверить hexlet-check **на PR переноса** (крутится на всех
       ветках) — зелёный до запроса ревью
 - [x] 1.5e Пуш + PR (пользователь) → ревью → мерж (пользователь)
@@ -336,41 +341,53 @@ Release please https://github.com/ivbbest/ai-for-developers-project-387/actions/
 **Зависимости:** шаг 1 замержен (агенту нужен рабочий код + актуальный
 AGENTS.md в main); P.3, P.4.
 
-- [ ] 2.1 App: проверить, что opencode-agent установлен именно на 387
-      (расширение доступа — D10/P.4; scope «только 386» — частая ошибка)
-- [ ] 2.2 Определить актуальный релиз `anomalyco/opencode/github` и его SHA
-      (пин 386 `v1.4.9` мог устареть) — записать SHA в воркфлоу
-- [ ] 2.3 Написать `.github/workflows/opencode.yml` с нуля по образцу 386,
-      инварианты (каждый — отдельная строка ревью диффа):
-      - [ ] 2.3a `on:` — `issue_comment` и `pull_request_review_comment`,
+- [x] 2.1 App: opencode-agent установлен на 387 (подтверждено владельцем
+      2026-09-05, P.4; факт работы — ответ `opencode-agent` в issue #6)
+- [x] 2.2 Актуальный релиз `anomalyco/opencode/github`: **v1.18.29**,
+      SHA `16747470f976aca3d362ad730bcd3fe82ecc2c9a` (пины 386 v1.4.9
+      устарели — записан свежий)
+- [x] 2.3 `.github/workflows/opencode.yml` написан по инвариантам, PR #5 →
+      main `6c7f2d6` https://github.com/ivbbest/ai-for-developers-project-387/pull/5
+      - [x] 2.3a `on:` — `issue_comment` + `pull_request_review_comment`,
             оба `types: [created]`
-      - [ ] 2.3b `mentions: /oc,/opencode` параметром экшена (D12)
-      - [ ] 2.3c `if:` второй уровень — автор не бот и `== 'ivbbest'`
-            (ограничение учебного проекта; задокументировать в README на 6.7)
-      - [ ] 2.3d `permissions: id-token: write` + `contents: read` (D2)
-      - [ ] 2.3e `actions/checkout` с `persist-credentials: false`,
-            `fetch-depth: 1` (для интерактива достаточно; фикс при
-            необходимости увеличит — проверим на шаге 4)
-      - [ ] 2.3f `model: opencode/big-pickle` (D14), `share: false`,
-            `timeout-minutes: 60` (D3), пин экшена на SHA из 2.2,
-            `concurrency` (D15)
-- [ ] 2.4 Локальная валидация YAML перед пушем: `actionlint` (если доступен
-      в окружении) или `npx yaml-lint` — иначе синтаксис вскроется только
-      в Actions
-- [ ] 2.5 Проверка секретов: `grep -rE "sk-[A-Za-z0-9]" .github/` — пусто;
-      в файле только `${{ secrets.OPENCODE_API_KEY }}`
-- [ ] 2.6 Коммит в `ci/opencode-github` → пуш + PR + мерж (пользователь);
-      hexlet-check/e2e на PR зелёные
-- [ ] 2.7 Разбор воркфлоу (запись в context.md или коммент issue): какие
-      события · какое условие пропускает · какие права · какая модель
-- [ ] 2.8 Тестовый issue («разведка») + комментарий `/oc explain this issue`
-- [ ] 2.9 Дождаться ответа агента в issue (от имени GitHub App) — ссылка
-- [ ] 2.10 Прогон вызова в Actions: номер/ссылка run, длительность, что в
-      логах шага с агентом — записать
-- [ ] 2.11 Анти-петля по критерию D-правил (2 минуты, `gh run list`) —
-      скриншот/ссылка в реестр
-- [ ] 2.12 Пометка в context.md: что сработало с первого прохода, что — с
-      итерацией (данные для самооценки 6.8)
+      - [x] 2.3b `mentions: /oc,/opencode` параметром экшена (D12)
+      - [x] 2.3c `if:` автор `ivbbest` + не бот + **проверка команды**
+            (поправка к D12 по факту: без неё обычный комментарий владельца
+            даёт красный прогон — экшен ошибается, а не скипает; PR #8,
+            main `d00b1f4`)
+      - [x] 2.3d `permissions: id-token: write` + `contents: read` (D2)
+      - [x] 2.3e checkout `persist-credentials: false`, `fetch-depth: 1`,
+            пин actions/checkout `3d3c42e…` v7.0.1
+      - [x] 2.3f `model: opencode/big-pickle`, `share: false`,
+            `timeout-minutes: 60`, пин SHA из 2.2, `concurrency` по треду
+- [x] 2.4 Валидация перед пушем: actionlint (docker `rhysd/actionlint`) —
+      файл чист (единственное замечание — уже существующее в docker.yml),
+      YAML парсится
+- [x] 2.5 Секрет-греп `sk-[A-Za-z0-9]` по `.github/` — пусто; в файле только
+      `${{ secrets.OPENCODE_API_KEY }}` по имени
+- [x] 2.6 `ci/opencode-github` → PR #5 (hexlet-check зелёный
+      https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33949958534)
+      → мерж в main `6c7f2d6`; follow-up guard — PR #8 → main `d00b1f4`
+- [x] 2.7 Разбор воркфлоу: событие — комментарий (created) к issue/PR;
+      пропуск — автор ivbbest, не бот, текст начинается с/содержит `/oc`
+      или `/opencode`; права — id-token:write + contents:read (комментарий
+      пишет App по OIDC); модель — big-pickle. Записан здесь + в context.md
+- [x] 2.8 Issue-разведка #6 «Как устроен выбор слотов» + комментарий
+      `/oc explain this issue`
+      https://github.com/ivbbest/ai-for-developers-project-387/issues/6#issuecomment-5549986594
+- [x] 2.9 Ответ App в треде (1888 символов, разбор по файлам/строкам кода):
+      https://github.com/ivbbest/ai-for-developers-project-387/issues/6#issuecomment-5549987934
+- [x] 2.10 Прогон: run 33950008593, `issue_comment`, success, 38 с
+      https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33950008593
+      (в логах: MODEL opencode/big-pickle, SHARE false, MENTIONS /oc,/opencode,
+      шаг `run_opencode` outcome=success)
+- [x] 2.11 Анти-петля: после ответа агента — единственный новый прогон
+      33950038397 **skipped** (фильтр автора), далее 2+ минут новых нет
+      (`gh run list --workflow=opencode.yml` на 06:34:40Z, список из 2 прогонов);
+      повторное подтверждение после PR #8: обычный комментарий без команды →
+      skipped 33950716153 (1 с), не failure
+- [x] 2.12 Пометка «первый проход/итерация» — в context.md (воркфлоу/ответ —
+      с первого прохода; фильтр команды в `if:` — потребовал итерацию)
 
 **След шага**: issue с ответом агента + прогон в Actions (ссылки);
 воркфлоу в main.
