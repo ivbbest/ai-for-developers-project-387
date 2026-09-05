@@ -14,11 +14,17 @@ on:
 
 jobs:
   opencode:
-    # второй уровень анти-петли: только живой владелец проекта, не бот;
-    # набор команд фильтрует mentions экшена
+    # анти-петля/шум: только живой владелец проекта, не бот, и только команды
+    # /oc, /opencode. Проверка команды здесь обязательна, а не только mentions
+    # экшена: без неё любой обычный комментарий владельца даёт красный прогон
+    # (экшен завершается с ошибкой «Comments must mention /oc», а не скипает)
     if: |
       github.event.comment.user.login == 'ivbbest' &&
-      github.event.comment.user.type != 'Bot'
+      github.event.comment.user.type != 'Bot' &&
+      (startsWith(github.event.comment.body, '/oc') ||
+       contains(github.event.comment.body, ' /oc') ||
+       startsWith(github.event.comment.body, '/opencode') ||
+       contains(github.event.comment.body, ' /opencode'))
     permissions:
       id-token: write
       contents: read
