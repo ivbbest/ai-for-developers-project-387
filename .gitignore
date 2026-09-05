@@ -23,3 +23,8 @@ e2e/playwright-report/
 
 # Архив одноразовых аудитов (локально, в git не попадает)
 .agents/archive/
+# артефакты opencode-schedule: upload-artifact забирает их независимо от git, а экшен агента
+# коммитит всё из рабочего каталога и сам открывает PR (факт: #23, #26 закрыты без мержа)
+report.json
+report-digest.json
+perf-report.md
