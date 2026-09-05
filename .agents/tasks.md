@@ -317,13 +317,17 @@ https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/3395050241
 
 ### 1.6 Деплой 387 (для следа шага 5, D13)
 
-- [ ] 1.6a Пользователь: создать Render-сервис из репо 387 (Dockerfile есть;
-      по образцу `docs/deploy-global.md`) и сообщить URL
-- [ ] 1.6b Repository variable `APP_URL` = URL деплоя 387 (Settings →
-      Secrets and variables → Actions → Variables; variable, не secret —
-      адрес публичный) — заводит пользователь
-- [ ] 1.6c Smoke деплоя: `curl -fsS $APP_URL/api/event-types` — JSON;
-      запись URL в README («Демо»)
+- [x] 1.6a Пользователь: Render-сервис создан 2026-09-05 (Deploy succeeded,
+      `cal-com API listening on :10000`, first deploy source `6207b39`), URL
+      https://ai-for-developers-project-387-670a.onrender.com
+- [x] 1.6b Repository variable `APP_URL` заведена пользователем
+      (`gh variable list`: APP_URL, 2026-09-05T09:05Z; с завершающим слэшем —
+      воркфлоу нормализует)
+- [x] 1.6c Smoke: warm-up+API с раннера GitHub (dispatch 33960207196 —
+      warm-up success, Lighthouse снял живые цифры); локальный curl к
+      render.com не проходит из рабочего окружения (сетевая блокировка — не баг
+      сервиса, зафиксировано в learnings). URL в README («Демо») — PR #21,
+      main `d1a204d`
 
 **След шага**: рабочее приложение в main 387 + зелёные прогоны (ссылки) +
 план развития + задеплоенный 387.
@@ -544,46 +548,51 @@ triage-воркфлоу, постановка «что считается исп
 двойной разбор) и 1.6 (деплой 387 + `APP_URL`; фолбэк 386 — только с явной
 записью причины); P.3.
 
-- [ ] 5.1 Написать `.github/workflows/opencode-schedule.yml` (по образцу 386,
-      переработав под курс — шаблон 386 правам/артефактам/промпту шага 5 не
-      соответствует):
-      - [ ] 5.1a `on: schedule: - cron: "0 3 * * *"` (D8) +
-            `workflow_dispatch`; why-комментарий в файле: «03:00 UTC =
-            06:00 МСК»
-      - [ ] 5.1b Права D7: `id-token: write`, `contents: write`,
-            `pull-requests: write`, `issues: write`
-      - [ ] 5.1c `concurrency` (D15), `timeout-minutes: 20`, пин SHA,
-            `model` (D14), `share: false`
-- [ ] 5.2 Шаг сбора данных (до агента):
-      - [ ] 5.2a Guard: `test -n "${{ vars.APP_URL }}"` (пустая переменная →
-            прогон красный, а не «зелёный мусор»)
-      - [ ] 5.2b Warm-up: `curl -sL --retry 3 --retry-delay 30 "$APP_URL"`
-            (Render free-tier холодный 30–60 с) +
-            `curl -fsS "$APP_URL/api/event-types"` (опционально — API тоже в
-            отчёт)
-      - [ ] 5.2c `npx lighthouse "$APP_URL" --output=json
-            --output-path=report.json --max-wait-for-load=60000`
-- [ ] 5.3 Prompt шага агента: «проанализируй report.json
-      (Performance/Accessibility/Best Practices): 3 главные проблемы, почему
-      болят, что делать; сохрани markdown-отчёт; по находкам создай issue с
-      меткой `perf-report`, а **если открытый issue с такой меткой уже есть —
-      обнови его комментарием, новый не создавай**» (дедуп G5.3)
-- [ ] 5.4 Публикация артефактов: `actions/upload-artifact` v4 с уникальным
-      именем (`lighthouse-report-${{ github.run_number }}`) — report.json +
-      markdown-отчёт; находится во вкладке Actions прогона
-- [ ] 5.5 Метка `perf-report` создана в репо (labels) — пользователь или
-      первый прогон
-- [ ] 5.6 Коммит в ветку `ci/opencode-schedule` → PR + мерж (пользователь)
-- [ ] 5.7 Ручной запуск `workflow_dispatch` → зелёный прогон; артефакты
-      скачиваются; ссылка на run
-- [ ] 5.8 Проверка D6-guard'а: агентский issue с отчётом НЕ разобран
-      триажем (нет второго комментария от бота) — ссылка на issue
-- [ ] 5.9 ≥1 issue по реальной находке отчёта — с критерием «что делаем»
-      (или подтвердить агентский и дописать критерий)
-- [ ] 5.10 Ночной прогон по cron: на следующий день — ссылка на run с
-      `event: schedule` (`gh run list --workflow=opencode-schedule.yml
-      --event schedule`)
-- [ ] 5.11 Следы + пометка «первый проход/итерация» в реестр/context.md
+- [x] 5.1 `.github/workflows/opencode-schedule.yml` написан (PR #20 → main,
+      итерации #22/#24):
+      - [x] 5.1a `on: schedule` cron `0 3 * * *` (06:00 МСК, why-комментарий)
+            + `workflow_dispatch`
+      - [x] 5.1b Права D7: `id-token/contents/pull-requests/issues: write`
+      - [x] 5.1c `concurrency`, пин SHA (v1.18.29), `model` big-pickle,
+            `share: false`; `timeout-minutes`: 20 → **30** по факту dispatch
+            33958460867 (job убит на 20 мин при разборе полного report.json)
+- [x] 5.2 Шаг сбора данных:
+      - [x] 5.2a Guard `test -n vars.APP_URL` — пустая переменная даёт красный
+            прогон с внятной ошибкой (проверено: до деплоя guard не давал
+            мусора; после — success в run 33960207196)
+      - [x] 5.2b Warm-up `curl -sL --retry 3 --retry-delay 30` + API-сэмпл
+            best-effort (замечание ревью #20: жёсткий `-fsS` валил job до
+            graceful-пути); нормализация завершающего слэша APP_URL (PR #20)
+      - [x] 5.2c `npx lighthouse` json + digest-шаг (jq, score<0.9) — PR #22,
+            полный файл остаётся в артефактах
+- [x] 5.3 Prompt: анализ дайджеста, 3 проблемы «что замерено/почему болит/что
+      делать», perf-report.md, issue с меткой `perf-report`, дедуп
+      «открытый issue — комментарием, новый не создавать»; запрет коммитов/PR
+      (факт PR #23 — закрыт без мержа) + явный `GITHUB_TOKEN` для gh (PR #24)
+- [x] 5.4 Артефакты: upload-artifact **v7.0.1** (актуальный пин вместо v4 из
+      плана), имя `lighthouse-report-{run_number}`, `if: always()`;
+      скачаны локально: report.json 406K + digest 3.4K + perf-report.md
+- [x] 5.5 Метка `perf-report` создана (`gh label create`, 2026-09-05)
+- [x] 5.6 Ветка `ci/opencode-schedule` → PR #20 (ревью до мержа, warm-up
+      best-effort по замечанию) → main после готовности деплоя; итерации
+      PR #22 (digest) и PR #24 (GITHUB_TOKEN) — тоже с ревью
+- [x] 5.7 Dispatch 33960207196 — success за 2m32s (после digest), артефакты
+      скачиваются:
+      https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33960207196
+- [x] 5.8 D6-guard: issue #25 создан `github-actions` (bot) — триаж его НЕ
+      разобрал: комментариев нет, новых прогонов opencode-triage нет
+      (`gh run list --workflow=opencode-triage.yml` — только старый #12):
+      https://github.com/ivbbest/ai-for-developers-project-387/issues/25
+- [x] 5.9 Issue #25 по реальным находкам (Performance 0.77: TBT 1010 мс,
+      main-thread 2.3 с, unused JS 64 KiB) с целью-критерием
+      «Performance ≥ 0.9, TBT < 200 мс, повторный замер»
+- [~] 5.10 Ночной cron: первый плановый запуск 2026-09-06 03:00 UTC —
+      проверить утром `gh run list --workflow=opencode-schedule.yml
+      --event schedule`; заодно подтвердит дедуп (issue #25 → комментарий,
+      не новый issue)
+- [x] 5.11 Следы здесь + context.md; итерации: timeout/digest (#22),
+      gh-auth/PR-обход (#23 закрыт → #24); первый проход: guard, warm-up,
+      Lighthouse, артефакты, метка, D6-guard
 
 **След шага**: прогон с артефактом-отчётом + issue из находок +
 подтверждённый ночной запуск (ссылки).
@@ -673,7 +682,7 @@ triage-воркфлоу, постановка «что считается исп
 
 ## Вне шагов курса (поручения владельца)
 
-- [ ] O.1 Подробное описание проекта 387 «по типу» docs предшественника:
+- [x] O.1 Подробное описание проекта 387 «по типу» docs предшественника:
       перенесённые `docs/project-understanding.md` и `docs/decision-guide.md`
       описывают 386 (продукт до v1.0.x) и не проясняют, что такое 387.
       Создать в `docs/` комплект: **понимание проекта** (зачем репо: перенос
@@ -690,3 +699,7 @@ triage-воркфлоу, постановка «что считается исп
       `docs/project-description` → PR → `/oc review` до мержа → мерж.
       Источник фактов — реестр (решения/следы), README-таблица воркфлоу
       (шаг 6), git-история main.
+      **Выполнено 2026-09-05:** `docs/project-context.md` +
+      `docs/agent-decisions.md`, шапки области действия в перенесённых доках —
+      PR #21 → main `d1a204d` (ревью в трееде: замечание про преждевременные
+      ссылки снято порядком мержей).
