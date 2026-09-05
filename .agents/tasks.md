@@ -92,10 +92,10 @@ R1–R9 приняты (R1 → D16), R10 отклонён — причина з�
       ревьюить нечего; прецедента на шаги 1–6 не создаёт — 2026-09-04,
       main `6da0890`, hexlet-check зелёный
       https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33887305457
-- [~] После коммита каркаса: обновить ожидаемый статус в V1
+- [x] После коммита каркаса: обновить ожидаемый статус в V1
       `docs/reading-guide.md` (там зафиксирован `git status` с untracked-файлами
-      каркаса — после коммита разойдётся с фактом) — обновлено в ветке
-      `docs/scaffold-closure`, ждёт мержа
+      каркаса — после коммита разойдётся с фактом) — влито PR #1
+      https://github.com/ivbbest/ai-for-developers-project-387/pull/1
 
 ---
 
@@ -107,8 +107,9 @@ R1–R9 приняты (R1 → D16), R10 отклонён — причина з�
 - [x] P.1 Пользователь: секрет `HEXLET_ID` → Settings → Secrets and
       variables → Actions (нужен `hexlet-check.yml`) — подтверждён в репе
       2026-09-04 (`gh secret list`: HEXLET_ID от 2026-09-04T13:37Z)
-- [ ] P.2 Пользователь: Settings → Actions → General → **Allow GitHub Actions
-      to create and approve pull requests** (нужен release-please на шаге 4).
+- [x] P.2 Пользователь: Settings → Actions → General → **Allow GitHub Actions
+      to create and approve pull requests** (нужен release-please на шаге 4) —
+      включено, проверено API 2026-09-04 (`can_approve_pull_request_reviews: true`).
       Область действия — только PR, создаваемые GITHUB_TOKEN воркфлоу: PR
       агента идут через GitHub App и от переключателя не зависят,
       интерактив/триаж PR не создают вовсе (решение по замечанию R10 —
@@ -133,16 +134,20 @@ R1–R9 приняты (R1 → D16), R10 отклонён — причина з�
 > `feat/…`: коммиты переноса — `chore:`/`docs:` (D16), чтобы имя не расходилось
 > с содержанием.
 
-**Текущий статус (2026-09-04, до мержа — потому не `[x]`):** ветка
-`chore/migrate-app` от main: `146507c` (перенос 108 файлов, 1.1) + `e9a3fbb`
-(актуализация 1.2, hygiene-грепы чисты). Локальная верификация 1.3a–j —
-полностью зелёная (smoke 27/46, vitest **72** — не 71: цикл в now.test.ts
-генерирует 2 теста из 1 декларации, факт с прогона; contract:check 9,
-e2e 9/9, прод-порт, docker: healthy/API/статика/404-JSON/`USER node`,
-exec-биты 755/755/644). Ждут пуша/PR/мержа (пользователь) → после мержа
-закрыть `[x]` со ссылками на прогоны 1.5d–f. P.2 **не выполнен**
-(`can_approve_pull_request_reviews: false`, проверено API 2026-09-04) —
-включить до первого мержа, иначе release-please умрёт в конце.
+**Текущий статус (2026-09-04): перенос замержен.** `chore/migrate-app`
+(`146507c` перенос + `e9a3fbb` актуализация) влита в main PR #2
+https://github.com/ivbbest/ai-for-developers-project-387/pull/2 (main `459e8c2`).
+1.5d: hexlet-check на PR зелёный
+https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906183569.
+1.5f на main: contract-sync
+https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806589 ·
+E2E https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806590 ·
+Docker https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806610 ·
+hexlet-check https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806753 ·
+Release please https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806712 —
+все зелёные, **release-PR нет, тегов нет (гейт D16 ✓)**. P.2 включён
+(`can_approve_pull_request_reviews: true`, проверено API). Остаётся в шаге 1:
+план развития 1.4+1.5c (ветка `docs/development-plan`) и деплой 1.6.
 
 
 
@@ -156,40 +161,42 @@ exec-биты 755/755/644). Ждут пуша/PR/мержа (пользоват�
 
 ### 1.1 Что перенести (содержимое, без git-истории 386)
 
+След: коммит `146507c` (PR #2, влито в main `459e8c2`).
+
 Каждый пункт — атомарен: скопировал список файлов → проверил `git status`.
 
-- [ ] 1.1a Контракт: `contract/` — `main.tsp`, `models.tsp`, `routes.tsp`,
+- [x] 1.1a Контракт: `contract/` — `main.tsp`, `models.tsp`, `routes.tsp`,
       `tspconfig.yaml`, `package.json`, `smoke.sh`, `dist/openapi.yaml`
       (артефакт коммитится — источник правды)
-- [ ] 1.1b Стаб: `contract/mock-server/` (server.js, package.json, smoke.sh)
-- [ ] 1.1c Фронт: `frontend/` (src, **`public/` — favicon.svg, ссылка из
+- [x] 1.1b Стаб: `contract/mock-server/` (server.js, package.json, smoke.sh)
+- [x] 1.1c Фронт: `frontend/` (src, **`public/` — favicon.svg, ссылка из
       index.html; без него Vite теряет favicon при сборке**, index.html,
       vite.config.ts, components.json, tsconfig-ы, package.json; `dist/`
       не тащить — собирается)
-- [ ] 1.1d Бэк: `backend/` (src, test, scripts/contract-check.sh, package.json,
+- [x] 1.1d Бэк: `backend/` (src, test, scripts/contract-check.sh, package.json,
       tsconfig-и; `dist/` и `data/` не тащить — `data/` содержит PII гостей)
-- [ ] 1.1e E2E: **весь** `e2e/` — `playwright.config.ts`, `tests/booking.spec.ts`,
+- [x] 1.1e E2E: **весь** `e2e/` — `playwright.config.ts`, `tests/booking.spec.ts`,
       `package.json`, `package-lock.json`, `Dockerfile`, `.dockerignore`,
       `env.ts`
       (e2e — НЕ workspace: отдельный `npm ci`; без Dockerfile/env.ts прогон
       1.3g невоспроизводим)
-- [ ] 1.1f Корень: `package.json` (workspaces), `package-lock.json`,
+- [x] 1.1f Корень: `package.json` (workspaces), `package-lock.json`,
       `Dockerfile`, `.dockerignore`, `docker-compose.dev.yml`, `scripts/`
       (`dev.sh`, `e2e.sh`); `.gitignore` — взять за основу файл 386 и
       дополнить каркасным (не склеивать «как есть»: дубли/пропуски),
       проверить покрытие `node_modules/`, `*/dist/`, `backend/data/`, `.env`
-- [ ] 1.1g Релизы (D9): `release-please-config.json` и
+- [x] 1.1g Релизы (D9): `release-please-config.json` и
       `.release-please-manifest.json` (версия 1.0.2) — перенести **как есть,
       без `tag-prefix`** (в 386 его нет; теги `cal-com-vX.Y.Z` образуются из
       имени пакета `cal-com` — в 387 будет тот же формат, ждать его в 4.14);
       `CHANGELOG.md` — **не переносить** (решено)
-- [ ] 1.1h Документация: `docs/` — `project-understanding.md`,
+- [x] 1.1h Документация: `docs/` — `project-understanding.md`,
       `decision-guide.md`, `deploy-global.md`, `specs/api-contract.md`,
       `archive/` (work-plan, specs-TEMPLATE); НЕ переносить
       `docs/review-recommendations.md` 386 (продуктовое ревью старого кода);
       `docs/specs/TEMPLATE.md` — создать в 387 (из архивного шаблона) —
       нужен для SDD-цикла шага 3
-- [ ] 1.1i CI-workflow'ы: `contract-sync.yml`, `e2e.yml`, `docker.yml`,
+- [x] 1.1i CI-workflow'ы: `contract-sync.yml`, `e2e.yml`, `docker.yml`,
       `release-please.yml` — перенести; `hexlet-check.yml` нового репо **не
       трогать и не заменять**; `.github/workflows/README.md` 386 — не
       перезатирать шаблонный файл 387 без сверки содержимого. **R5:** у
@@ -198,9 +205,9 @@ exec-биты 755/755/644). Ждут пуша/PR/мержа (пользоват�
       из исходников). При переносе сверить с фактическим runner'ом 387: если
       окружение другое — комментарии станут ложными, а красные прогоны 1.5f
       разбирать по реальному раннеру (gh-fix-ci), а не по тексту из 386
-- [ ] 1.1j `opencode*.yml` — **НЕ переносить** (D1); создавать на шагах 2–5
+- [x] 1.1j `opencode*.yml` — **НЕ переносить** (D1); создавать на шагах 2–5
       по образцу 386
-- [ ] 1.1k НЕ переносить: `node_modules/`, `*/dist/`, `backend/data/`,
+- [x] 1.1k НЕ переносить: `node_modules/`, `*/dist/`, `backend/data/`,
       `.env`, `input/`, `.agents/` 386, `docs/review-recommendations.md`,
       `e2e/test-results/` (локальный артефакт Playwright, в git 386 нет),
       `.opencode/`, `skills-lock.json` (локальная инструментальная обвязка —
@@ -208,19 +215,21 @@ exec-биты 755/755/644). Ждут пуша/PR/мержа (пользоват�
 
 ### 1.2 Актуализация под новый репозиторий
 
-- [ ] 1.2a README.md: разделы «Стек / Установка / Запуск / Демо» из README
+След: коммит `e9a3fbb` (PR #2, влито в main `459e8c2`).
+
+- [x] 1.2a README.md: разделы «Стек / Установка / Запуск / Демо» из README
       386; клон-секция — URL репо 387; **обязательно** указать обёртку
       `./scripts/dev.sh` (без linux-node на хосте прямые `npm run` ломаются);
       бейдж hexlet-check уже 387
-- [ ] 1.2b Заменить ссылки на 386 во всех перенесённых файлах:
+- [x] 1.2b Заменить ссылки на 386 во всех перенесённых файлах:
       `grep -rn "project-386\|cal-com-97sr\|github-integration" . --exclude-dir=node_modules`
       — известны: `docs/specs/api-contract.md:7` (живой issue-ссылка),
       ссылки на runbook 386 в docs/workflow (runbook в перенесённых файлах
       быть не должен — остаётся в 386)
-- [ ] 1.2c Обновить устаревшие числа в перенесённом `decision-guide.md`
+- [x] 1.2c Обновить устаревшие числа в перенесённом `decision-guide.md`
       (§4.6/§8): smoke контракта 28→27, vitest 64→71, e2e 6→9 (факты
       подтверждены grep по 386: 27/46/71/9/9)
-- [ ] 1.2d `AGENTS.md` — реальные команды (агент в Actions читает его):
+- [x] 1.2d `AGENTS.md` — реальные команды (агент в Actions читает его):
       полный CI-гейт, как в `e2e.yml` job checks: `npm ci`,
       `npm run compile -w @cal-com/contract`, smoke контракта и стаба,
       `npm test -w backend`, `npm run contract:check -w backend`,
@@ -228,29 +237,31 @@ exec-биты 755/755/644). Ждут пуша/PR/мержа (пользоват�
       `npm run lint -w frontend`, `./scripts/e2e.sh`, docker-сборка;
       путь монорепо и workspaces; формулировка про `opencode*.yml` —
       «создаются на шагах 2–5» (D1, уже приведена в согласованный вид)
-- [ ] 1.2e Секрет- и PII-проверка перенесённого:
+- [x] 1.2e Секрет- и PII-проверка перенесённого:
       `grep -ri "api_key\|token\|password" --include='*.yml' --include='*.json' .`
       (только имена переменных) и `git ls-files | grep -i "backend/data/"`
       (пусто)
 
 ### 1.3 Локальная верификация перенесённого (все команды — `./scripts/dev.sh`)
 
-- [ ] 1.3a `npm ci` из корня (workspaces поднимаются)
-- [ ] 1.3b `npm run compile -w @cal-com/contract` — чистый, openapi.yaml
+След: прогоны локально 2026-09-04 (выводы в context.md); повторены CI на PR #2 и main — ссылки в статус-блоке.
+
+- [x] 1.3a `npm ci` из корня (workspaces поднимаются)
+- [x] 1.3b `npm run compile -w @cal-com/contract` — чистый, openapi.yaml
       не отличается от закоммиченного
-- [ ] 1.3c `npm run smoke -w @cal-com/contract` (27 проверок) и
+- [x] 1.3c `npm run smoke -w @cal-com/contract` (27 проверок) и
       `npm run smoke -w @cal-com/mock-server` (46 проверок) — зелёные
-- [ ] 1.3d `npm test -w backend` (71 тест vitest) — зелёные
-- [ ] 1.3e `npm run contract:check -w backend` (prism-proxy, 9 проверок +
+- [x] 1.3d `npm test -w backend` (vitest **72** — не 71: цикл now.test.ts:35 генерирует 2 теста из 1 декларации) — зелёные
+- [x] 1.3e `npm run contract:check -w backend` (prism-proxy, 9 проверок +
       гейт Violation) — зелёный
-- [ ] 1.3f typecheck/build/lint-гейты: `npm run typecheck -w backend`,
+- [x] 1.3f typecheck/build/lint-гейты: `npm run typecheck -w backend`,
       `npm run build -w backend`, `npm run lint -w frontend` — зелёные
-- [ ] 1.3g Сборка фронта + прод-режим одним портом (build frontend/backend,
+- [x] 1.3g Сборка фронта + прод-режим одним портом (build frontend/backend,
       `PORT=3001 node backend/dist/server.js`) — UI и API живут
-- [ ] 1.3h `./scripts/e2e.sh` — 9 сценариев Playwright зелёные
-- [ ] 1.3i `docker build -t cal-com .` + smoke запущенного контейнера
+- [x] 1.3h `./scripts/e2e.sh` — 9 сценариев Playwright зелёные
+- [x] 1.3i `docker build -t cal-com .` + smoke запущенного контейнера
       (API/статика/404-JSON/healthy/`USER node`)
-- [ ] 1.3j Исполняемость скриптов в git: `git ls-files -s scripts/*.sh
+- [x] 1.3j Исполняемость скриптов в git: `git ls-files -s scripts/*.sh
       contract/smoke.sh` — **ожидать `scripts/dev.sh` и `scripts/e2e.sh`
       = 100755, а `contract/smoke.sh` = 100644** (в индексе 386 так;
       вызывается `bash smoke.sh` из package.json — exec-бит не нужен, CI 386
@@ -279,16 +290,16 @@ exec-биты 755/755/644). Ждут пуша/PR/мержа (пользоват�
 
 ### 1.5 Выход в GitHub
 
-- [ ] 1.5a Коммит-чекпоинт «перенос» — тип **`chore:`** (не `feat:` — D16:
+- [x] 1.5a (`146507c`) Коммит-чекпоинт «перенос» — тип **`chore:`** (не `feat:` — D16:
       `feat:` на первом пуше в main без тегов откроет release-PR 1.1.0 уже
       на шаге 1 и обесценит демо D9), hygiene-греп чист
-- [ ] 1.5b Коммит-чекпоинт «актуализация» (1.2) — тип **`chore:`**/**`docs:`**
+- [x] 1.5b (`e9a3fbb`) Коммит-чекпоинт «актуализация» (1.2) — тип **`chore:`**/**`docs:`**
       (D16)
 - [ ] 1.5c Коммит-чекпоинт «план развития» (1.4) — тип **`docs:`** (D16)
-- [ ] 1.5d Проверить hexlet-check **на PR переноса** (крутится на всех
+- [x] 1.5d Проверить hexlet-check **на PR переноса** (крутится на всех
       ветках) — зелёный до запроса ревью
-- [ ] 1.5e Пуш + PR (пользователь) → ревью → мерж (пользователь)
-- [ ] 1.5f После мержа: прогоны hexlet-check + contract-sync + e2e +
+- [x] 1.5e Пуш + PR (пользователь) → ревью → мерж (пользователь)
+- [x] 1.5f После мержа: прогоны hexlet-check + contract-sync + e2e +
        docker.yml + release-please в Actions 387 — зелёные; **release-please
        зелёный И БЕЗ создания release-PR** (гейт D16: первый release-PR
        обязан появиться только на шаге 4 после `fix:`); красный —
