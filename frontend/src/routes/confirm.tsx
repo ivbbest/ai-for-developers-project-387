@@ -107,7 +107,11 @@ export function ConfirmPage() {
   }
 
   const freeCount = daySlots?.filter((s) => s.status === 'available').length;
-  const emailTooLong = email.length > EMAIL_MAX;
+  // зеркало того, что уйдёт на сервер: POST отправляет email.trim(), поэтому
+  // и предел, и счётчик считаем по trimmed — иначе «254 символа + перевод
+  // строки» блокировался бы формой, хотя сервер принял бы значение
+  const emailTrimmed = email.trim();
+  const emailTooLong = emailTrimmed.length > EMAIL_MAX;
   const endIso = endParam ?? (type
     ? new Date(new Date(start).getTime() + type.durationMinutes * 60_000).toISOString()
     : null);
@@ -203,11 +207,11 @@ export function ConfirmPage() {
                 />
                 {emailTooLong ? (
                   <span id="email-error" className="text-xs text-destructive">
-                    слишком длинный адрес: максимум {EMAIL_MAX} символа (введено {email.length})
+                    слишком длинный адрес: максимум {EMAIL_MAX} символа (введено {emailTrimmed.length})
                   </span>
                 ) : (
                   <span id="email-hint" className="text-xs text-muted-foreground">
-                    до {EMAIL_MAX} символов{email.length > 0 ? ` — введено ${email.length}` : ''}
+                    до {EMAIL_MAX} символов{emailTrimmed.length > 0 ? ` — введено ${emailTrimmed.length}` : ''}
                   </span>
                 )}
               </div>
