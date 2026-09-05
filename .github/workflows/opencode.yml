@@ -1,0 +1,48 @@
+name: opencode
+
+# Интерактив: ответ агента по команде в комментарии к issue или к строке PR.
+# Команда — /oc или /opencode (mentions — первичный фильтр экшена, if — второй
+# уровень по автору). Ответ пишет GitHub App по OIDC, GITHUB_TOKEN на запись
+# не нужен (права минимальные: id-token: write обязателен OIDC, contents: read —
+# checkout). Модель — big-pickle единообразно по всем воркфлоу проекта.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  opencode:
+    # второй уровень анти-петли: только живой владелец проекта, не бот;
+    # набор команд фильтрует mentions экшена
+    if: |
+      github.event.comment.user.login == 'ivbbest' &&
+      github.event.comment.user.type != 'Bot'
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    # 60 мин: агентский ответ по свободной команде может включать чтение кода;
+    # job-level ceiling, у экшена параметра timeout нет
+    timeout-minutes: 60
+    # параллельные вызовы по одному треду не накладываются, очередь не отменяем
+    concurrency:
+      group: opencode-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # интерактиву достаточно HEAD; шаг 4 проверит, хватит ли для ветки/PR
+          fetch-depth: 1
+
+      - name: Run opencode
+        uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/big-pickle
+          share: false
+          mentions: /oc,/opencode
