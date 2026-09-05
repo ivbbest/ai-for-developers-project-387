@@ -1,0 +1,77 @@
+name: opencode-schedule
+
+# Ночная проверка деплоя: сырые данные собирает обычный шаг (Lighthouse CLI),
+# агент превращает report.json в markdown-отчёт и issue по находкам.
+# Cron 03:00 UTC = 06:00 МСК: не чаще раза в сутки (D8), утром команда читает
+# отчёт. workflow_dispatch рядом — ручной прогон без ожидания ночи.
+# APP_URL — repository variable (адрес публичный, не секрет).
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  check:
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: opencode-schedule
+      cancel-in-progress: false
+    steps:
+      - name: Guard APP_URL
+        run: |
+          test -n "${{ vars.APP_URL }}" || {
+            echo "::error::APP_URL не задана (Settings → Secrets and variables → Actions → Variables, задача 1.6 реестра) — отчёт по пустому адресу бессмысленен"
+            exit 1
+          }
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Warm-up (Render free-tier холодный 30-60 с)
+        run: |
+          curl -sL --retry 3 --retry-delay 30 "${{ vars.APP_URL }}" -o /dev/null
+          curl -fsS "${{ vars.APP_URL }}/api/event-types" -o api-sample.json
+          head -c 200 api-sample.json
+
+      - name: Lighthouse
+        run: |
+          npx lighthouse "${{ vars.APP_URL }}" \
+            --output=json --output-path=report.json \
+            --chrome-flags="--headless --no-sandbox --disable-gpu" \
+            --max-wait-for-load=60000
+
+      - name: Run opencode report
+        uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/big-pickle
+          share: false
+          prompt: |
+            Проанализируй report.json (Lighthouse по продакшен-деплою этого
+            проекта): категории Performance / Accessibility / Best Practices.
+            Для каждой из 3 главных проблем: что именно замерено, почему это
+            болит пользователю календаря звонков, что делать. Сохрани вывод в
+            perf-report.md (markdown-отчёт по файлам проекта не суди — только
+            по данным замера). Затем по находкам создай issue с меткой
+            perf-report и текстом «что делаем»; если открытый issue с меткой
+            perf-report уже есть — обнови его комментарием со свежими цифрами,
+            новый не создавай.
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lighthouse-report-${{ github.run_number }}
+          path: |
+            report.json
+            perf-report.md
+          if-no-files-found: warn
