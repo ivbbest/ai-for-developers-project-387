@@ -487,8 +487,10 @@ triage-воркфлоу, постановка «что считается исп
       в треде, прогоны 33952550739/33952563064/33952874631
 - [x] 4.7 `.github/workflows/opencode-review.yml` — PR #14 → main `0cb1b9a`:
       - [x] 4.7a `on: pull_request` types opened/synchronize/reopened/ready_for_review
-      - [x] 4.7b `if:` автор `ivbbest` + не-draft (D5; подтверждено на #15/#17 —
-            review skipped для агентских/ботовских PR)
+      - [x] 4.7b `if:` автор `ivbbest` + не-draft (D5); skip подтверждён на
+            #17 (review skipped, run 33954068330). На #15 авторевью не
+            запускался вовсе — workflow для `pull_request` берётся из head-ветки
+            PR, а `opencode-review.yml` появился в main позже открытия #15
       - [x] 4.7c prompt с 5 критериями + «не ревьюй коммиты opencode-agent[bot]»
       - [x] 4.7d `use_github_token: true`; факт прогона 33951997871 потребовал
             явного `GITHUB_TOKEN` env и подъёма `pull-requests: write` —
