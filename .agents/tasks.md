@@ -466,53 +466,61 @@ triage-воркфлоу, постановка «что считается исп
 **Зависимости:** шаг 3 (issue А с критериями приёмки, триаж в main); P.2
 (переключатель создания PR Actions — без него release-please упадёт в конце).
 
-- [ ] 4.1 В issue А: `/oc fix` → агент ведёт ветку `opencode/*` и открывает PR
-- [ ] 4.2 Проверить PR: описание (что/почему), состав (без мусора),
-      `Closes #А` в теле, имя ветки `opencode/*` — ссылки; отдельно
-      подтвердить, что агенту хватило `fetch-depth: 1` (2.3e) для создания
-      ветки/PR — не хватило: увеличить фикс и записать в learnings
-      (обещанная на шаге 2 проверка, иначе ссылка «в никуда»)
-- [ ] 4.3 Коммиты агента: `git log --format='%an %s'` — Conventional
-      (`fix: …`), hygiene-греп (правило реестра) по текстам коммитов и
-      описанию PR — чисто
-- [ ] 4.4 Общий комментарий в обсуждении PR: `/oc <замечание>`
-      (событие `issue_comment`)
-- [ ] 4.5 Комментарий к строке diff: `/oc <замечание>` (событие
-      `pull_request_review_comment`; файл/строку в тексте не дублировать)
-- [ ] 4.6 Агент обновил **ту же ветку** и учёл оба замечания — новые коммиты
-      в PR, ответы в треде (ссылки)
-- [ ] 4.7 Написать `.github/workflows/opencode-review.yml` (по образцу 386 +
-      правки):
-      - [ ] 4.7a `on: pull_request`, types `opened, synchronize,
-            reopened, ready_for_review`
-      - [ ] 4.7b `if:` — автор PR `ivbbest` (D5: демо на человеческом PR;
-            агентские PR ревьюит человек — записать в README 6.x)
-      - [ ] 4.7c prompt — критерии ревью (стили, типы, очевидные ошибки,
-            соответствие контракту); в prompt добавить «не ревьюй коммиты
-            автора opencode-agent[bot]» (защита от само-ревью на synchronize)
-      - [ ] 4.7d `use_github_token: true` (режим D4) + права
-            `id-token: write` + `contents/pull-requests/issues: read` +
-            `timeout-minutes: 20`, `concurrency`, пин SHA
-- [ ] 4.8 Коммит в ветку `ci/opencode-review` → PR + мерж (пользователь)
-- [ ] 4.9 Факт-проверка D4: на человеческом PR замечания авторевью реально
-      появились (от `github-actions[bot]`); не появились на read-правах →
-      минимально поднять `pull-requests: write`, записать причину (материал
-      6.3); прогон авторевью от собственного комментария не зациклился
-      (types PR, проверить на synchronize)
-- [ ] 4.10 Отреагировать на замечания авторевью: каждое — принять коммитом или
-      аргументом в треде (триаж, не бросать молча)
-- [ ] 4.11 Демо-PR авторевью: small-правка из ветки `ivbbest/*` (например
-      косметика docs) → авторевью оставил замечания → ссылки на PR и run
-- [ ] 4.12 Перед `/oc fix` по issue Б (если берём): проверить, что в issue Б
-      есть критерии приёмки (в А они были из 3.9; Б — дописать)
-- [ ] 4.13 Мерж PR А (пользователь) → release-please открывает release-PR;
-      зафиксировать номер/ссылку
-- [ ] 4.14 Release-PR: версия 1.0.3 (`fix:` → patch, D9), CHANGELOG собран
-      заново; поведение не соответствует D9 → fallback из D9 + запись в
-      learnings → мерж (пользователь) → тег в 387 формата `cal-com-v1.0.3`
-      (префикс из имени пакета, см. 1.1g)
-- [ ] 4.15 Следы: PR, комменты-замечания, run авторевью, release-PR, тег —
-      в реестр; пометка «первый проход/итерация»
+- [x] 4.1 `/oc fix` в issue А → ветка `opencode/issue10-20260905071319`,
+      PR #15 (run вызова 33951934279):
+      https://github.com/ivbbest/ai-for-developers-project-387/pull/15
+- [x] 4.2 PR проверен: описание «что/почему» есть, состав — 6 продуктовых
+      файлов (мусор убран замечанием 4.4), `Closes #10` в теле, имя ветки
+      верное. **fetch-depth: 1 хватило** — App создал ветку с нуля и открыл
+      PR без увеличения фикса (обещанная проверка 2.3e закрыта)
+- [x] 4.3 Коммиты агента Conventional (`fix:`×3 после reword-замечания),
+      hygiene-греп текстов коммитов и тела PR — чисто; squash в main
+      `2fea0ec`
+- [x] 4.4 Общий комментарий `/oc` (issue_comment): убрать `.agents/*` из
+      PR → App удалил коммит `0e515e4` force-with-lease, ответ в треде
+      https://github.com/ivbbest/ai-for-developers-project-387/pull/15#issuecomment-5550279913
+- [x] 4.5 Инлайн-комментарий `/oc` к строке diff (pull_request_review_comment):
+      добавить `aria-describedby` → коммит `782a04d`
+      https://github.com/ivbbest/ai-for-developers-project-387/pull/15#discussion_r3939865697
+- [x] 4.6 Та же ветка обновлена дважды (4.4, 4.5) + третий цикл — reword
+      не-Conventional коммита по comment `/oc` (87db0df → 782a04d); ответы
+      в треде, прогоны 33952550739/33952563064/33952874631
+- [x] 4.7 `.github/workflows/opencode-review.yml` — PR #14 → main `0cb1b9a`:
+      - [x] 4.7a `on: pull_request` types opened/synchronize/reopened/ready_for_review
+      - [x] 4.7b `if:` автор `ivbbest` + не-draft (D5; подтверждено на #15/#17 —
+            review skipped для агентских/ботовских PR)
+      - [x] 4.7c prompt с 5 критериями + «не ревьюй коммиты opencode-agent[bot]»
+      - [x] 4.7d `use_github_token: true`; факт прогона 33951997871 потребовал
+            явного `GITHUB_TOKEN` env и подъёма `pull-requests: write` —
+            эскалация D4 задокументирована why-комментарием в файле
+- [x] 4.8 Ветка `ci/opencode-review` → PR #14 → мерж main `0cb1b9a`
+      (hexlet-check зелёный; `/oc review` в трееде до мержа)
+- [x] 4.9 Факт-проверка D4: авторевью пишет — APPROVED от `github-actions[bot]`
+      на PR #16 (review pass 3m4s/1m1s, runs 33953491976/33953894988); на
+      read-правах не проверялось (эскалация сделана по факту первой же ошибки
+      токена). Анти-петля: ревью пишет comment/review-события, не PR-события —
+      повторных прогонов нет (run list чист после каждого ревью)
+- [x] 4.10 Замечания отработаны: нит `cancel-in-progress` в ревью #14 —
+      аргумент в треде (осознанный трейд-офф D15, повторяет интерактив);
+      ревью #16 замечаний не имел
+- [x] 4.11 Демо авторевью на человеческом PR: #16 (`fix:`+`test:` из
+      `fix/email-limit-trim-edge`) — review APPROVED
+      https://github.com/ivbbest/ai-for-developers-project-387/pull/16
+- [x] 4.12 Issue Б в шаг 4 не брался (демо полного цикла закрыто issue А);
+      критерии приёмки в Б дописать перед `/oc fix` — переносится в шаг 5+
+- [x] 4.13 PR А влит (main `2fea0ec`); release-please открыл release-PR #17
+      `chore(main): release cal-com 1.0.3` (от `github-actions` — P.2
+      подтверждён в деле)
+- [x] 4.14 Release-PR: версия **1.0.3** (fix:→patch, D9 ✓ без fallback),
+      CHANGELOG собран заново; мерж #17 → main `5875ed8`, тег
+      `cal-com-v1.0.3` (5875ed8) и GitHub Release опубликованы; прогоны на
+      main зелёные (hexlet-check 33954606140, contract-sync, E2E, Docker,
+      Release please). Итерация: первый release-PR не появился с #15 —
+      squash-заголовок «Email limit fix done…» не Conventional (урок в learnings)
+- [x] 4.15 Следы здесь; пометка: с первого прохода — ветка/PR от App, оба
+      канала замечаний, авторевью, тег; итерации — конвенция squash-заголовка
+      (релизный цикл), GITHUB_TOKEN/write в режиме D4, action_required для
+      ботовых PR (одобрение только в UI)
 
 **След шага**: PR с историей «ревью → правки в той же ветке», замечания
 авторевью, release-PR и тег — со ссылками.
