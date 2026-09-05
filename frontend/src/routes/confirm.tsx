@@ -13,6 +13,11 @@ import { formatDayLongMsk, formatTimeMsk, mskDay } from '../lib/time';
 // мусор Date.parse переживает, а Intl на нём падает
 const ISO_START = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/;
 
+// Лимит email по контракту (GuestEmail @maxLength 254). maxLength на поле не
+// ставим намеренно: HTML-атрибут молча режет вставку длинного адреса без
+// сообщения; предел показываем подсказкой и проверкой перед отправкой.
+const EMAIL_MAX = 254;
+
 export function ConfirmPage() {
   const { typeId } = useParams<{ typeId: string }>();
   const [params] = useSearchParams();
@@ -102,13 +107,14 @@ export function ConfirmPage() {
   }
 
   const freeCount = daySlots?.filter((s) => s.status === 'available').length;
+  const emailTooLong = email.length > EMAIL_MAX;
   const endIso = endParam ?? (type
     ? new Date(new Date(start).getTime() + type.durationMinutes * 60_000).toISOString()
     : null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || submitting || !type) return;
+    if (!name.trim() || emailTooLong || submitting || !type) return;
     setSubmitting(true);
     setError(null);
     setConflict(false);
@@ -184,15 +190,26 @@ export function ConfirmPage() {
                 maxLength={120}
                 required
               />
-              <Input
-                aria-label="Email"
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                maxLength={254}
-                required
-              />
+              <div className="grid gap-1">
+                <Input
+                  aria-label="Email"
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  aria-invalid={emailTooLong || undefined}
+                  required
+                />
+                {emailTooLong ? (
+                  <span className="text-xs text-destructive">
+                    слишком длинный адрес: максимум {EMAIL_MAX} символа (введено {email.length})
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    до {EMAIL_MAX} символов{email.length > 0 ? ` — введено ${email.length}` : ''}
+                  </span>
+                )}
+              </div>
               <Textarea
                 aria-label="Заметки"
                 placeholder="Заметки (необязательно)"
@@ -216,7 +233,7 @@ export function ConfirmPage() {
                   )}
                 </p>
               )}
-              <Button type="submit" disabled={submitting || !name.trim() || !email.trim() || !type} className="w-full">
+              <Button type="submit" disabled={submitting || !name.trim() || emailTooLong || !email.trim() || !type} className="w-full">
                 {submitting ? 'Отправка…' : 'Подтвердить запись'}
               </Button>
             </form>
