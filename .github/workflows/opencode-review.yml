@@ -1,0 +1,51 @@
+name: opencode-review
+
+# Авторевью PR по курсу: режим use_github_token (замечания от имени раннера),
+# не App-режим. Демо — на человеческих PR (фильтр автора ivbbest); агентские
+# PR (`opencode/*`) ревьюит человек — иначе двойной разбор и лишний расход.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  review:
+    # публичный репо: без фильтра автором любой чужой PR жрёт OPENCODE_API_KEY;
+    # агентов в этом воркфлоу не ревьюим (см. шапку)
+    if: |
+      github.event.pull_request.user.login == 'ivbbest' &&
+      github.event.pull_request.draft == false
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: read
+      issues: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: opencode-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run opencode review
+        uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/big-pickle
+          share: false
+          use_github_token: true
+          prompt: |
+            Сделай ревью этого pull request. Критерии по порядку:
+            1) соответствие контракту TypeSpec/OpenAPI (contract/dist/openapi.yaml —
+               источник правды; правки контракта обязаны попадать в артефакт);
+            2) очевидные ошибки и edge-кейсы (валидация, границы, гонки);
+            3) типы и строгость TS без подавлений;
+            4) стиль проекта: why-комментарии вместо пересказа кода, без мёртвого кода;
+            5) тесты: каждое изменение логики покрыто слоем (unit/contract/e2e).
+            Не ревьюй коммиты автора opencode-agent[bot]. Оставь замечания
+            ревью-комментариями по строкам diff; если серьёзных замечаний нет —
+            одним комментарием скажи, что ревью пройдено.
