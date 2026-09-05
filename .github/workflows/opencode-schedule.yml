@@ -36,9 +36,14 @@ jobs:
           persist-credentials: false
 
       - name: Warm-up (Render free-tier холодный 30-60 с)
+        env:
+          URL: ${{ vars.APP_URL }}
         run: |
-          curl -sL --retry 3 --retry-delay 30 "${{ vars.APP_URL }}" -o /dev/null
-          curl -fsS "${{ vars.APP_URL }}/api/event-types" | head -c 200
+          # нормализация: переменная могла быть задана с завершающим слэшем,
+          # а Express не матчит «//api/...» — режем слэш здесь, а не в настройке
+          BASE="${URL%/}"
+          curl -sL --retry 3 --retry-delay 30 "$BASE" -o /dev/null
+          curl -fsS "$BASE/api/event-types" | head -c 200
 
       - name: Lighthouse
         # continue-on-error осознанный: site-down должен превратиться в
