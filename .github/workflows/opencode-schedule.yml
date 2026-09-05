@@ -86,6 +86,10 @@ jobs:
       - name: Run opencode report
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          # gh CLI внутри шага не аутентифицирован без явного токена (факт
+          # dispatch 33959681028: агент не смог создать issue и в обход
+          # открыл PR с отчётом); issues:write из D7 раскрывается только здесь
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
         with:
           model: opencode/big-pickle
@@ -100,11 +104,15 @@ jobs:
             score < 0.9; полный report.json не читай, он огромный). Категории:
             Performance / Accessibility / Best Practices. Для каждой из 3
             главных проблем: что именно замерено, почему это болит пользователю
-            календаря звонков, что делать. Сохрани вывод в perf-report.md
-            (markdown-отчёт, только по данным дайджеста). Затем по находкам
-            создай issue с меткой perf-report и текстом «что делаем»; если
-            открытый issue с меткой perf-report уже есть — обнови его
-            комментарием со свежими цифрами, новый не создавай.
+            календаря звонков, что делать. Сохрани вывод в perf-report.md в
+            рабочем каталоге — файл заберёт шаг публикации артефактов.
+            Ничего не коммить, не пушь и PR не открывай: отчёт живёт в
+            артефактах прогона.
+            Затем по находкам создай issue командой `gh issue create` с меткой
+            perf-report и текстом «что делаем» (репозиторий и автор уже в
+            окружении gh); если открытый issue с меткой perf-report уже есть —
+            добавь ему комментарий со свежими цифрами (`gh issue comment`),
+            новый не создавай.
 
       - name: Upload artifacts
         if: always()
