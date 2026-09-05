@@ -22,7 +22,8 @@ jobs:
       # токеном, read не даёт создать review (причина подъёма — по D4,
       # подтверждено фактом прогона 33951997871)
       pull-requests: write
-      issues: read
+      # issues: read убран (ревью Р7): замечания пишутся токеном раннера в PR,
+      # чтение issues этим воркфлоу не используется
     runs-on: ubuntu-latest
     timeout-minutes: 20
     concurrency:
