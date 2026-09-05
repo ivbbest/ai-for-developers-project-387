@@ -19,7 +19,9 @@ jobs:
       pull-requests: write
       issues: write
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 20 не хватило на разбор полного report.json (dispatch 33958460867 убит
+    # таймаутом); с дайджестом шаг агента короче, запас — на холодный старт
+    timeout-minutes: 30
     concurrency:
       group: opencode-schedule
       cancel-in-progress: false
@@ -62,28 +64,47 @@ jobs:
             --chrome-flags="--headless --no-sandbox --disable-gpu" \
             --max-wait-for-load=60000
 
+      - name: Digest report
+        # агент на big-pickle не успевает разобрать многмегабайтный report.json
+        # за таймаут job (факт: dispatch 33958460867 убит на 20 мин). Дайджест
+        # — категории + проваленные аудиты (score < 0.9) с короткими полями:
+        # килобайты вместо мегабайт, тот же смысл для анализа
+        if: hashFiles('report.json') != ''
+        run: |
+          jq '{
+            fetched: .fetchTime, url: .finalDisplayedUrl,
+            categories: .categories | map_values({score: .score, title: .title}),
+            audits: [.audits | to_entries[]
+              | select(.value.score != null and .value.score < 0.9)
+              | {id: .key, title: .value.title, score: .value.score,
+                 numericValue: .value.numericValue,
+                 displayValue: .value.displayValue,
+                 description: (.value.description | .[0:200])}]
+          }' report.json > report-digest.json
+          wc -c report.json report-digest.json
+
       - name: Run opencode report
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          REPORT_PRESENT: ${{ hashFiles('report.json') != '' }}
         uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
         with:
           model: opencode/big-pickle
           share: false
           prompt: |
-            Если файла report.json нет (замер не снят: деплой недоступен или
-            Lighthouse упал) — не выдумывай анализ: создай или обнови issue с
-            меткой perf-report текстом «ночная проверка не состоялась, замер
+            Если файла report-digest.json нет (замер не снят: деплой недоступен
+            или Lighthouse упал) — не выдумывай анализ: создай или обнови issue
+            с меткой perf-report текстом «ночная проверка не состоялась, замер
             не снят» и остановись.
-            Иначе: проанализируй report.json (Lighthouse по продакшен-деплою
-            этого проекта): категории Performance / Accessibility / Best
-            Practices. Для каждой из 3 главных проблем: что именно замерено,
-            почему это болит пользователю календаря звонков, что делать.
-            Сохрани вывод в perf-report.md (markdown-отчёт, только по данным
-            замера). Затем по находкам создай issue с меткой perf-report и
-            текстом «что делаем»; если открытый issue с меткой perf-report
-            уже есть — обнови его комментарием со свежими цифрами, новый не
-            создавай.
+            Иначе: проанализируй report-digest.json — дайджест Lighthouse-замера
+            продакшен-деплоя этого проекта (категории и проваленные аудиты
+            score < 0.9; полный report.json не читай, он огромный). Категории:
+            Performance / Accessibility / Best Practices. Для каждой из 3
+            главных проблем: что именно замерено, почему это болит пользователю
+            календаря звонков, что делать. Сохрани вывод в perf-report.md
+            (markdown-отчёт, только по данным дайджеста). Затем по находкам
+            создай issue с меткой perf-report и текстом «что делаем»; если
+            открытый issue с меткой perf-report уже есть — обнови его
+            комментарием со свежими цифрами, новый не создавай.
 
       - name: Upload artifacts
         if: always()
@@ -92,5 +113,6 @@ jobs:
           name: lighthouse-report-${{ github.run_number }}
           path: |
             report.json
+            report-digest.json
             perf-report.md
           if-no-files-found: warn
