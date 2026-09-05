@@ -29,7 +29,7 @@ jobs:
       - name: Guard APP_URL
         run: |
           test -n "${{ vars.APP_URL }}" || {
-            echo "::error::APP_URL не задана (Settings → Secrets and variables → Actions → Variables, задача 1.6 реестра) — отчёт по пустому адресу бессмысленен"
+            echo "::error::APP_URL не задана: Settings → Secrets and variables → Actions → Variables. Без адреса отчёт не имеет смысла"
             exit 1
           }
 
@@ -113,6 +113,19 @@ jobs:
             окружении gh); если открытый issue с меткой perf-report уже есть —
             добавь ему комментарий со свежими цифрами (`gh issue comment`),
             новый не создавай.
+
+      - name: Working tree cleanliness gate
+        # гейт причины, а не списка имён (ревью Р4): пост-обработка экшена
+        # коммитит рабочий каталог и может открыть PR с любым новым файлом
+        # (факты #23/#26); .gitignore закрывает известные имена, этот шаг
+        # ловит неизвестные: неигнорируемые изменения после шага отчёта = красный
+        run: |
+          dirty="$(git status --porcelain)"
+          test -z "$dirty" || {
+            echo "::error::агент оставил незакоммиченные изменения — артефакты прогона не должны попадать в git"
+            echo "$dirty"
+            exit 1
+          }
 
       - name: Upload artifacts
         if: always()
