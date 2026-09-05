@@ -198,14 +198,15 @@ export function ConfirmPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   aria-invalid={emailTooLong || undefined}
+                  aria-describedby={emailTooLong ? 'email-error' : 'email-hint'}
                   required
                 />
                 {emailTooLong ? (
-                  <span className="text-xs text-destructive">
+                  <span id="email-error" className="text-xs text-destructive">
                     слишком длинный адрес: максимум {EMAIL_MAX} символа (введено {email.length})
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground">
+                  <span id="email-hint" className="text-xs text-muted-foreground">
                     до {EMAIL_MAX} символов{email.length > 0 ? ` — введено ${email.length}` : ''}
                   </span>
                 )}
