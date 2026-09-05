@@ -41,8 +41,12 @@ test.describe.serial('бронирование: полный путь гостя
     await page.getByRole('button', { name: 'Продолжить' }).click();
     await expect(page).toHaveURL(/\/confirm\?start=/);
     // инфо-панель: время выбранного слота (то же, что в сетке) и посчитанный
-    // сервером счётчик свободных — не «…» из незагруженного состояния
-    await expect(page.getByText(chosen, { exact: true })).toBeVisible();
+    // сервером счётчик свободных — не «…» из незагруженного состояния.
+    // Локатор скоупнут к InfoBox: на странице перехода сетка и инфо-панель
+    // могут сосуществовать кадр в кадр, и глобальный getByText по времени
+    // падал strict-mode violation (факт CI-прогона 33953491965)
+    const timeBox = page.getByText('Выбранное время').locator('..');
+    await expect(timeBox.getByText(chosen, { exact: true })).toBeVisible();
     await expect(page.getByText('Свободно', { exact: true }).locator('..')).toContainText(/\d+/);
 
     await page.getByPlaceholder('Имя').fill('Э2Е Гость');
@@ -231,17 +235,27 @@ test.describe.serial('краевые проверки интерфейса', () 
     await expect(page.getByRole('button', { name: 'Подтвердить запись' })).toBeVisible();
 
     const emailField = page.getByPlaceholder('Email');
+    // имя заполняем сразу: иначе кнопка disabled по пустому name и проверки
+    // перебора были бы ложно-зелёными (disabled не из-за email)
+    await page.getByPlaceholder('Имя').fill('Проверка Лимита');
+    const submit = page.locator('button[type=submit]');
+
     const atLimit = `${'a'.repeat(248)}@x.com`; // ровно 254
     await emailField.fill(atLimit);
     await expect(emailField).toHaveValue(atLimit);
     await expect(page.getByText(/до 254 символов/)).toBeVisible();
+    await expect(submit).toBeEnabled();
 
     const overLimit = `${'a'.repeat(249)}@x.com`; // 255
     await emailField.fill(overLimit);
     await expect(emailField).toHaveValue(overLimit); // вставка не обрезана молча
     await expect(page.getByText(/максимум 254 символа/)).toBeVisible();
-
-    const submit = page.locator('button[type=submit]');
     await expect(submit).toBeDisabled();
+
+    // регресс trimmed-проверки: валидный адрес с обрамляющими пробелами
+    // не должен блокироваться формой (на сервер уходит trim)
+    await emailField.fill(`  ${atLimit}\n`);
+    await expect(page.getByText(/до 254 символов/)).toBeVisible();
+    await expect(submit).toBeEnabled();
   });
 });
