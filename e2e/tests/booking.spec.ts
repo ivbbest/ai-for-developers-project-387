@@ -41,8 +41,12 @@ test.describe.serial('бронирование: полный путь гостя
     await page.getByRole('button', { name: 'Продолжить' }).click();
     await expect(page).toHaveURL(/\/confirm\?start=/);
     // инфо-панель: время выбранного слота (то же, что в сетке) и посчитанный
-    // сервером счётчик свободных — не «…» из незагруженного состояния
-    await expect(page.getByText(chosen, { exact: true })).toBeVisible();
+    // сервером счётчик свободных — не «…» из незагруженного состояния.
+    // Локатор скоупнут к InfoBox: на странице перехода сетка и инфо-панель
+    // могут сосуществовать кадр в кадр, и глобальный getByText по времени
+    // падал strict-mode violation (факт CI-прогона 33953491965)
+    const timeBox = page.getByText('Выбранное время').locator('..');
+    await expect(timeBox.getByText(chosen, { exact: true })).toBeVisible();
     await expect(page.getByText('Свободно', { exact: true }).locator('..')).toContainText(/\d+/);
 
     await page.getByPlaceholder('Имя').fill('Э2Е Гость');
