@@ -217,6 +217,15 @@ describe('POST /api/bookings (3.3)', () => {
     expect(res.body.code).toBe('validation');
   });
 
+  it('email: ровно 254 → 201, 255 сырых символов → 400 с пределом в тексте', async () => {
+    const ok = await request(api).post('/api/bookings').send(booking({ email: `${'a'.repeat(248)}@x.com` }));
+    expect(ok.status).toBe(201);
+    const over = await request(api).post('/api/bookings').send(booking({ start: '2026-09-10T06:15:00.000Z', email: `${'a'.repeat(249)}@x.com` }));
+    expect(over.status).toBe(400);
+    expect(over.body.code).toBe('validation');
+    expect(over.body.message).toBe('Поле «email»: максимум 254 символа');
+  });
+
   it('кривой start (не парсится) → 400 validation', async () => {
     const res = await request(api).post('/api/bookings').send(booking({ start: 'вчера' }));
     expect(res.status).toBe(400);

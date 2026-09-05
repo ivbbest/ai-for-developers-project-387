@@ -305,6 +305,7 @@ components:
       description: Читаемый id типа события; задаёт владелец, уникален (C5)
     GuestEmail:
       type: string
+      maxLength: 254
       format: email
       description: Email гостя; валидация простая, регистр сохраняется (E11)
     GuestName:

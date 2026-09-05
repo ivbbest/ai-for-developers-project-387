@@ -218,4 +218,30 @@ test.describe.serial('краевые проверки интерфейса', () 
     await page.getByRole('button', { name: 'Подтвердить запись' }).click();
     await expect(page.getByText('Бронь подтверждена. До встречи!')).toBeVisible();
   });
+
+  test('длинный email не режется молча: предел виден, перебор блокирует отправку', async ({ page }) => {
+    // регресс: HTML maxLength=254 молча обрезал вставленный адрес до подтверждения;
+    // теперь поле без maxLength, лимит объявлен подсказкой, перебор — ошибкой.
+    // На форму идём прямой ссылкой (как в тесте протухшего слота): серийные
+    // сценарии выше оставляют занятыми слои 0/3/12, а сама бронь не создаётся —
+    // забирать свободный слот из сетки незачем.
+    const start = `${DAY}T06:30:00.000Z`; // 09:30 MSK
+    const end = `${DAY}T06:45:00.000Z`;
+    await page.goto(`/book/meet-15/confirm?start=${start}&end=${end}`);
+    await expect(page.getByRole('button', { name: 'Подтвердить запись' })).toBeVisible();
+
+    const emailField = page.getByPlaceholder('Email');
+    const atLimit = `${'a'.repeat(248)}@x.com`; // ровно 254
+    await emailField.fill(atLimit);
+    await expect(emailField).toHaveValue(atLimit);
+    await expect(page.getByText(/до 254 символов/)).toBeVisible();
+
+    const overLimit = `${'a'.repeat(249)}@x.com`; // 255
+    await emailField.fill(overLimit);
+    await expect(emailField).toHaveValue(overLimit); // вставка не обрезана молча
+    await expect(page.getByText(/максимум 254 символа/)).toBeVisible();
+
+    const submit = page.locator('button[type=submit]');
+    await expect(submit).toBeDisabled();
+  });
 });
