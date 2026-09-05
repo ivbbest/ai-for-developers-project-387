@@ -60,7 +60,7 @@
 ### Booking
 ```
 { id: uuid, eventTypeId: string, start: utcDateTime, end: utcDateTime,
-  name: string (1–120), email: string (валидный), notes?: string (≤ 2000),
+  name: string (1–120), email: string (валидный, ≤ 254), notes?: string (≤ 2000),
   createdAt: utcDateTime }
 ```
 Поля гостя плоские (name/email), а не вложенный `attendee` — проще клиент и валидация.
@@ -114,8 +114,8 @@
 | E7 | `start` вне сетки (09:07) или не кратно duration | 400 `validation` |
 | E8 | Неизвестные поля в теле POST | 400 `validation` (строгая схема, zod `.strict()`) — ловит опечатки клиентов |
 | E9 | Не-JSON тело / Content-Type другой | 400 `validation`; тело > 64 КБ → 413 `payload_too_large` (express limit; ответ — `Error`, см. E18) |
-| E10 | name/notes: trim, пустые после trim → 400; unicode/кириллица/эмодзи — проходят; максимумы по спеке | сервер нормализует trim |
-| E11 | email: trim; валидация простая (regex), регистр сохраняется как введён | 400 при невалидном |
+| E10 | name/notes: trim, пустые после trim → 400; unicode/кириллица/эмодзи — проходят; максимумы по спеке (email — 254, спека обновлена в PR #34) | сервер нормализует trim |
+| E11 | email: trim; валидация простая (regex), регистр сохраняется как введён; максимум 254 по контракту, считается по сырой строке до trim (как name/notes в E10) | 400 при невалидном/переборе |
 | E12 | `durationMinutes` 540 → 1 слот/день; 545 или 0 или 13 → 400 | кратно 5, 5–540 |
 | E13 | POST /event-types с id seed-типа (`meet-15`) | 409 (уникальность) |
 | E14 | Повторный старт сервера на существующей БД | seed идемпотентен, дублей нет, брони целы |
