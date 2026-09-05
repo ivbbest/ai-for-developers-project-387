@@ -42,6 +42,12 @@ jobs:
           head -c 200 api-sample.json
 
       - name: Lighthouse
+        # continue-on-error осознанный: site-down должен превратиться в
+        # текстовый отчёт «проверка не удалась», а не красный прогон без
+        # объяснений (утренняя команда читает issue, а не логи). Без этого
+        # флага job прерывался бы здесь и `if: success()` на агенте был бы
+        # тривиально правдой (замечание ревью PR #20)
+        continue-on-error: true
         run: |
           npx lighthouse "${{ vars.APP_URL }}" \
             --output=json --output-path=report.json \
@@ -49,22 +55,27 @@ jobs:
             --max-wait-for-load=60000
 
       - name: Run opencode report
-        uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          REPORT_PRESENT: ${{ hashFiles('report.json') != '' }}
+        uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
         with:
           model: opencode/big-pickle
           share: false
           prompt: |
-            Проанализируй report.json (Lighthouse по продакшен-деплою этого
-            проекта): категории Performance / Accessibility / Best Practices.
-            Для каждой из 3 главных проблем: что именно замерено, почему это
-            болит пользователю календаря звонков, что делать. Сохрани вывод в
-            perf-report.md (markdown-отчёт по файлам проекта не суди — только
-            по данным замера). Затем по находкам создай issue с меткой
-            perf-report и текстом «что делаем»; если открытый issue с меткой
-            perf-report уже есть — обнови его комментарием со свежими цифрами,
-            новый не создавай.
+            Если файла report.json нет (замер не снят: деплой недоступен или
+            Lighthouse упал) — не выдумывай анализ: создай или обнови issue с
+            меткой perf-report текстом «ночная проверка не состоялась, замер
+            не снят» и остановись.
+            Иначе: проанализируй report.json (Lighthouse по продакшен-деплою
+            этого проекта): категории Performance / Accessibility / Best
+            Practices. Для каждой из 3 главных проблем: что именно замерено,
+            почему это болит пользователю календаря звонков, что делать.
+            Сохрани вывод в perf-report.md (markdown-отчёт, только по данным
+            замера). Затем по находкам создай issue с меткой perf-report и
+            текстом «что делаем»; если открытый issue с меткой perf-report
+            уже есть — обнови его комментарием со свежими цифрами, новый не
+            создавай.
 
       - name: Upload artifacts
         if: always()
