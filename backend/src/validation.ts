@@ -20,7 +20,7 @@ export const bookingCreateSchema = z
     name: z.string('Ожидается строка').max(120, 'максимум 120 символов').trim().min(1, 'нельзя пусто'),
     email: z
       .string('Ожидается строка')
-      .max(254, 'слишком длинный')
+      .max(254, 'максимум 254 символа')
       .trim()
       .min(1, 'нельзя пусто')
       .regex(EMAIL_PATTERN, { error: 'некорректный адрес' }),
