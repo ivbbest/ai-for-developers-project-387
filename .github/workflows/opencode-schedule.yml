@@ -38,8 +38,7 @@ jobs:
       - name: Warm-up (Render free-tier холодный 30-60 с)
         run: |
           curl -sL --retry 3 --retry-delay 30 "${{ vars.APP_URL }}" -o /dev/null
-          curl -fsS "${{ vars.APP_URL }}/api/event-types" -o api-sample.json
-          head -c 200 api-sample.json
+          curl -fsS "${{ vars.APP_URL }}/api/event-types" | head -c 200
 
       - name: Lighthouse
         # continue-on-error осознанный: site-down должен превратиться в
