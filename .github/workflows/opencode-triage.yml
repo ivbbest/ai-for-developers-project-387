@@ -1,0 +1,61 @@
+name: opencode-triage
+
+# Автотриаж: разбор нового issue без команды (prompt обязателен — комментария
+# нет). Guard'ы: только issues (не PR-мета), только живой пользователь, возраст
+# аккаунта >= 30 дней (защита от спам-регистраций). Комментарий пишет App по
+# OIDC — права на запись GITHUB_TOKEN не нужны.
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    # PR технически тоже issue — без !pull_request триаж комментировал бы
+    # каждый PR; user.type == 'User' отсекает ботов и самого App (анти-петля)
+    if: |
+      github.event_name == 'issues' &&
+      !github.event.issue.pull_request &&
+      github.event.issue.user.type == 'User'
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: opencode-triage-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Check account age
+        id: check
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const user = await github.rest.users.getByUsername({
+              username: context.payload.issue.user.login
+            });
+            const created = new Date(user.data.created_at);
+            const days = (Date.now() - created) / (1000 * 60 * 60 * 24);
+            return days >= 30;
+          result-encoding: string
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.check.outputs.result == 'true'
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Run opencode triage
+        if: steps.check.outputs.result == 'true'
+        uses: anomalyco/opencode/github@16747470f976aca3d362ad730bcd3fe82ecc2c9a # v1.18.29
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+        with:
+          model: opencode/big-pickle
+          share: false
+          prompt: |
+            Разбери этот issue как задачу проекта: найди в коде причину
+            (или подтверди отсутствие нужной функциональности), перечисли
+            затронутые модули и предложи путь исправления. Ответь одним
+            комментарием в этот issue: причина · затронутые части ·
+            предлагаемый путь. Не меняй код и не открывай PR.
