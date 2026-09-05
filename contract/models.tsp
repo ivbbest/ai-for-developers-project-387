@@ -32,6 +32,7 @@ scalar EventDescription extends string;
 scalar GuestName extends string;
 
 @format("email")
+@maxLength(254)
 @doc("Email гостя; валидация простая, регистр сохраняется (E11)")
 scalar GuestEmail extends string;
 
