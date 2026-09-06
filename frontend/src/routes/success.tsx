@@ -23,13 +23,32 @@ export function SuccessPage() {
           <CardDescription>Ваша запись создана</CardDescription>
         )}
       </CardHeader>
-      <CardContent className="flex justify-center gap-2">
-        <Button variant="outline" asChild>
-          <Link to="/">На главную</Link>
-        </Button>
-        <Button asChild>
-          <Link to="/admin">Предстоящие встречи</Link>
-        </Button>
+      <CardContent className="flex flex-col items-center gap-4">
+        {/* id брони — capability для отмены (issue #12): сервер не знает,
+            кто гость, и отменяет по номеру; ссылка ведёт на страницу
+            отмены, номер стоит рядом текстом — на случай «закрыл вкладку»
+        */}
+        {booking && (
+          <CardDescription className="text-center">
+            Номер брони:{' '}
+            <span data-testid="booking-id" className="font-mono text-xs break-all">
+              {booking.id}
+            </span>
+          </CardDescription>
+        )}
+        <div className="flex flex-wrap justify-center gap-2">
+          {booking && (
+            <Button variant="outline" asChild>
+              <Link to={`/cancel/${booking.id}`}>Отменить бронь</Link>
+            </Button>
+          )}
+          <Button variant="outline" asChild>
+            <Link to="/">На главную</Link>
+          </Button>
+          <Button asChild>
+            <Link to="/admin">Предстоящие встречи</Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

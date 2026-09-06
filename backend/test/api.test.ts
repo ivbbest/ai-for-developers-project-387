@@ -511,3 +511,51 @@ describe('error handler: необработанное исключение', () 
     expect(res.headers['x-powered-by']).toBeUndefined();
   });
 });
+
+describe('DELETE /api/bookings/:id (issue #12)', () => {
+  let db: Db;
+  let api: ReturnType<typeof createApp>;
+  beforeEach(() => {
+    db = makeDb();
+    api = createApp(db, { nowFn: NOW });
+  });
+
+  const book = () => ({
+    eventTypeId: 'meet-15',
+    start: '2026-09-10T06:00:00.000Z',
+    name: 'Гость',
+    email: 'g@example.com',
+  });
+
+  it('204 без тела: бронь исчезает из списка, слот снова available', async () => {
+    const created = await request(api).post('/api/bookings').send(book());
+    const id = created.body.id as string;
+    const del = await request(api).delete(`/api/bookings/${id}`);
+    expect(del.status).toBe(204);
+    expect(del.body).toEqual({});
+    const list = await request(api).get('/api/bookings');
+    expect(list.body.map((b: { id: string }) => b.id)).not.toContain(id);
+    const slots = await request(api).get('/api/event-types/meet-15/slots?date=2026-09-10');
+    expect(slots.body[0]).toMatchObject({ start: '2026-09-10T06:00:00.000Z', status: 'available' });
+  });
+
+  it('повторная отмена — 204 (идемпотентность); неизвестный id — 404 Error-моделью', async () => {
+    const created = await request(api).post('/api/bookings').send(book());
+    await request(api).delete(`/api/bookings/${created.body.id}`).expect(204);
+    await request(api).delete(`/api/bookings/${created.body.id}`).expect(204);
+    const res = await request(api).delete('/api/bookings/00000000-0000-4000-8000-000000000000');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      code: 'not_found',
+      message: 'Бронь не найдена: 00000000-0000-4000-8000-000000000000',
+    });
+  });
+
+  it('чужую бронь без id не отменить: операции чтения одной брони в контракте нет', async () => {
+    // GET /api/bookings/:id отсутствует намеренно (C6-логика) — попытка
+    // «найти чужую бронь перебором» упирается в маршрутный 404
+    const res = await request(api).get('/api/bookings/00000000-0000-4000-8000-000000000000');
+    expect(res.status).toBe(404);
+    expect(res.body.code).toBe('not_found');
+  });
+});

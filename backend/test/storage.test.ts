@@ -6,6 +6,7 @@ import {
   findOverlaps,
   insertBooking,
   createBookingIfFree,
+  cancelBooking,
   listUpcoming,
   toIsoUtc,
   InvalidDateError,
@@ -119,5 +120,17 @@ describe('хранилище: схема, seed, репозитории', () => {
     insertBooking(db, booking({ start: '2026-09-11T09:00:00.000Z', end: '2026-09-11T09:15:00.000Z' }));
     const upcoming = listUpcoming(db, '2026-09-11T00:00:00.000Z').map((b) => b.start);
     expect(upcoming).toEqual(['2026-09-11T09:00:00.000Z', '2026-09-12T09:00:00.000Z']);
+  });
+
+  it('cancelBooking: освобождает слот и список, повтор идемпотентен, исход — история', () => {
+    insertBooking(db, booking({ id: 'c1', start: '2026-09-10T09:00:00.000Z', end: '2026-09-10T09:15:00.000Z' }));
+    expect(cancelBooking(db, 'c1')).toBe('cancelled');
+    expect(findOverlaps(db, '2026-09-10T09:00:00.000Z', '2026-09-10T09:15:00.000Z')).toHaveLength(0);
+    expect(listUpcoming(db, '2026-09-01T00:00:00.000Z')).toHaveLength(0);
+    expect(cancelBooking(db, 'c1')).toBe('already');
+    expect(cancelBooking(db, 'no-such-id')).toBe('not-found');
+    // мягкая отмена: строка остаётся (status), а не DELETE — идемпотентность
+    // повторного вызова без различения «не существует»/«уже отменена»
+    expect(db.prepare('SELECT status FROM bookings WHERE id = ?').get('c1')).toEqual({ status: 'cancelled' });
   });
 });

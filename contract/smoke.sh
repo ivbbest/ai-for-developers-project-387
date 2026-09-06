@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Smoke контракта (шаг 1.6): сборка артефакта, Prism-мок по contract/dist/openapi.yaml
-# + curl по всем 5 ручкам и кодам 200/201/400/404/409. 404/409 — через заголовок
+# + curl по всем 6 ручкам и кодам 200/201/204/400/404/409. 404/409 — через заголовок
 # Prefer: code=NNN: Prism без состояния и отдаёт заготовленный пример по схеме
 # (stateful-сценарий «бронь → Занято» — стаб этапа 2, 2.1b).
 # Прогон: ./scripts/dev.sh npm run smoke -w @cal-com/contract
@@ -102,6 +102,13 @@ check "POST /bookings Prefer code=409" 409 -H 'Prefer: code=409' -H 'Content-Typ
 check_body "409 — код slot_conflict" '"slot_conflict"'
 check "POST /bookings Prefer code=404" 404 -H 'Prefer: code=404' -H 'Content-Type: application/json' -d "$BOOK" "$BASE/bookings"
 check_body "404 брони — код not_found" '"not_found"'
+
+# DELETE /api/bookings/{id} — отмена брони (issue #12): 204 без тела по
+# умолчанию, 404 — по Prefer (Prism без состояния, идемпотентный повтор
+# «уже отменена» здесь неотличим от первого вызова — проверен в стабе)
+check "DELETE /bookings/{id} → 204" 204 -X DELETE "$BASE/bookings/6f1f2a34-0000-4000-8000-000000000000"
+check "DELETE /bookings/{id} Prefer code=404" 404 -X DELETE -H 'Prefer: code=404' "$BASE/bookings/6f1f2a34-0000-4000-8000-000000000000"
+check_body "404 отмены — код not_found" '"not_found"'
 
 # GET /api/bookings — предстоящие (админ)
 check "GET /bookings" 200 "$BASE/bookings"

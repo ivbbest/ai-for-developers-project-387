@@ -63,7 +63,9 @@
   name: string (1–120), email: string (валидный, ≤ 254), notes?: string (≤ 2000),
   createdAt: utcDateTime }
 ```
-Поля гостя плоские (name/email), а не вложенный `attendee` — проще клиент и валидация.
+Поля гостя плоские (name/email), а не вложенный `attendee` — проще клиент и валидация.
+`id` (uuid) — ещё и capability отмены (E21): сервер не знает, кто гость, и
+отменяет по номеру; в UI и e2e показывается гостю на странице подтверждения.
 
 ## Эндпоинты
 
@@ -74,6 +76,7 @@
 | GET | `/api/event-types` | Каталог типов (id, title, description, durationMinutes) | 200 `EventType[]` | — |
 | GET | `/api/event-types/{id}/slots?date=YYYY-MM-DD` | Сетка слотов дня со статусами (`date` — обязательный `@query`) | 200 `Slot[]` | 404 тип не найден; 400 дата кривая или параметр не передан (E20); `slot_out_of_window` — дата вне C4 (200 c `[]` **не** отдаём, чтобы фронт различал «нет слотов» и «вне окна») |
 | POST | `/api/bookings` | Создать бронь | 201 `Booking` | 400 валидация; 404 типа нет; `slot_conflict` → 409; 413 `payload_too_large` (E18) |
+| DELETE | `/api/bookings/{id}` | Отменить бронь по id (id — capability: гость получает его при записи, спека `booking-cancel.md`) | 204 без тела (и при повторной отмене — идемпотентно) | 404 `not_found` неизвестный id |
 
 Тело `POST /api/bookings` (`BookingCreate`):
 ```
@@ -124,7 +127,8 @@
 | E17 | Trailing slash `/api/event-types/` | не нормативно; фронт шлёт точные пути из контракта |
 | E18 | Тело > 64 КБ на любом POST (413) | `Error { code: "payload_too_large" }` в JSON — дефолтный HTML-ответ Express (body-parser limit) оборачивается единым 4xx-хендлером |
 | E19 | Неизвестный путь `/api/*` (напр. `/api/whatever`) | 404 `Error { code: "not_found" }` в JSON; SPA-fallback настроен только на не-`/api` GET, поэтому `/api/*` не должен «проваливаться» в `index.html` или дефолтный Express-404 |
-| E20 | `GET /slots` без параметра `?date=` | 400 `validation` (`date` обязателен: в TypeSpec — `@query` без `?`) |
+| E20 | `GET /slots` без параметра `?date=` | 400 `validation` (`date` обязателен: в TypeSpec — `@query` без `?`) |
+| E21 | `DELETE /api/bookings/{id}`: повторная отмена / неизвестный id | повтор → 204 (идемпотентно, состояние не меняется); неизвестный → 404 `not_found`; «уже отменена» и «не существует» неразличимы — иначе эндпоинт подтверждал бы существование чужой брони |
 
 ## Модель ошибок (общая)
 

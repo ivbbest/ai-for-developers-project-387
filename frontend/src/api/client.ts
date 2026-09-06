@@ -30,6 +30,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(res.status, body);
   }
+  // 204 (отмена брони) по контракту без тела: res.json() бросил бы
+  // SyntaxError на пустом потоке — ответ не читаем вовсе
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 
@@ -45,6 +48,9 @@ export const api = {
     request<Booking>('/bookings', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(input) }),
 
   listBookings: () => request<Booking[]>('/bookings'),
+
+  cancelBooking: (id: string) =>
+    request<void>(`/bookings/${encodeURIComponent(id)}`, { method: 'DELETE' }),
 
   createEventType: (input: EventTypeCreate) =>
     request<EventType>('/event-types', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(input) }),

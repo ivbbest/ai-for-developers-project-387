@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Смоук стаба (шаг 2.1b): стейтфул-сценарий контракта на in-memory mock —
-# «бронь → слот стал booked → повтор 409 → новый тип виден в каталоге»,
-# плюс коды ошибок всех 5 ручек. Даты считаются на завтра (MSK), чтобы
-# прогон не устаревал.
+# «бронь → слот стал booked → повтор 409 → отмена 204 → слот снова свободен
+# → новый тип виден в каталоге», плюс коды ошибок всех 6 ручек. Даты считаются
+# на завтра (MSK), чтобы прогон не устаревал.
 # Прогон: ./scripts/dev.sh npm run smoke -w @cal-com/mock-server
 set -u
 cd "$(dirname "$0")"
@@ -63,6 +63,22 @@ check "повтор той же брони → 409" 409 -H 'Content-Type: applic
 check_body "409 slot_conflict" '"slot_conflict"'
 check "GET bookings (админ)" 200 "$BASE/bookings"
 check_body "бронь видна админу" 'smoke@example.com'
+
+# отмена брони (issue #12): 204 → слот свободен → повтор идемпотентен →
+# неизвестный id 404; id берём из админского списка (он тот же бронь-объект)
+BOOKING_ID=$(node -e "const j=require('fs').readFileSync('$BODY','utf8');console.log(JSON.parse(j)[0].id)")
+check "DELETE booking → 204" 204 -X DELETE "$BASE/bookings/$BOOKING_ID"
+check "GET slots после отмены" 200 "$BASE/event-types/meet-15/slots?date=$TOMORROW"
+check_body "первый слот снова свободен" '"start":"'"$FIRST_START"'","end":"[^"]*","status":"available"'
+check "повторный DELETE → 204 (идемпотентность)" 204 -X DELETE "$BASE/bookings/$BOOKING_ID"
+check "DELETE неизвестного id → 404" 404 -X DELETE "$BASE/bookings/00000000-0000-4000-8000-000000000000"
+check_body "404 отмены — not_found" '"not_found"'
+check "GET bookings после отмены" 200 "$BASE/bookings"
+if grep -q 'smoke@example.com' "$BODY"; then
+  echo "FAIL  отменённая бронь осталась в списке админа"; FAILS=$((FAILS + 1))
+else
+  echo "PASS  отменённая бронь исключена из списка"
+fi
 
 # создание типа: 201 → виден в каталоге → сетка по новой длительности → дубль 409
 TYPE='{"id":"smoke-45","title":"Смоук 45 минут","durationMinutes":45}'

@@ -62,12 +62,20 @@ B='{"eventTypeId":"meet-15","start":"2026-09-10T06:00:00.000Z","name":"Пров�
 check "GET  /event-types" 200 "$BASE/event-types"
 check "GET  /event-types/{id}/slots?date=…" 200 "$BASE/event-types/meet-15/slots?date=2026-09-10"
 check "POST /bookings → 201" 201 -H "$J" -d "$B" "$BASE/bookings"
+BOOK_ID=$(node -e "const j=require('fs').readFileSync('$LOGDIR/body','utf8');console.log(JSON.parse(j).id)")
 check "POST /bookings повтор → 409" 409 -H "$J" -d "$B" "$BASE/bookings"
 check "POST /bookings нет типа → 404" 404 -H "$J" -d '{"eventTypeId":"nope","start":"2026-09-10T07:00:00.000Z","name":"П","email":"p@example.com"}' "$BASE/bookings"
 check "GET  /bookings" 200 "$BASE/bookings"
 check "POST /event-types → 201" 201 -H "$J" -d '{"id":"check-60","title":"Часовой чек","durationMinutes":60}' "$BASE/event-types"
 check "POST /event-types дубль → 409" 409 -H "$J" -d '{"id":"check-60","title":"Ещё","durationMinutes":60}' "$BASE/event-types"
 check "GET  /bookings после брони" 200 "$BASE/bookings"
+
+# отмена (issue #12) — в конце: предыдущие проверки считают бронь живой;
+# prism-proxy валидирует и пустое тело 204, и Error-тело 404 по контракту
+check "DELETE /bookings/{id} → 204" 204 -X DELETE "$BASE/bookings/$BOOK_ID"
+check "GET  slots после отмены" 200 "$BASE/event-types/meet-15/slots?date=2026-09-10"
+check "DELETE повтор → 204 (идемпотентность)" 204 -X DELETE "$BASE/bookings/$BOOK_ID"
+check "DELETE неизвестного id → 404" 404 -X DELETE "$BASE/bookings/00000000-0000-4000-8000-000000000000"
 
 if [ "$FAILS" != 0 ]; then
   echo "CONTRACT CHECK FAILED: $FAILS провалов"

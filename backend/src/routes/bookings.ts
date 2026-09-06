@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { HttpError } from '../errors.js';
 import type { Db } from '../db/connection.js';
 import { getEventType } from '../repositories/eventTypes.js';
-import { createBookingIfFree, listUpcoming, toIsoUtc } from '../repositories/bookings.js';
+import { createBookingIfFree, cancelBooking, listUpcoming, toIsoUtc } from '../repositories/bookings.js';
 import { validateBookingStart } from '../services/slots.js';
 import { now, type NowFn } from '../services/now.js';
 import { bookingCreateSchema } from '../validation.js';
@@ -43,6 +43,18 @@ export function bookingsRouter(db: Db, nowFn: NowFn = now): Router {
       throw new HttpError(409, 'slot_conflict', 'Слот уже занят (пересечение интервалов)');
     }
     res.status(201).json(result.booking);
+  });
+
+  // DELETE /api/bookings/:id (issue #12): id брони — capability, гость
+  // получает его на странице подтверждения. 204 и для «отменена только
+  // что», и для повторной (идемпотентность); неизвестный/чужой id — 404
+  // единым Error-блоком, факта «такая бронь есть» не выдаём
+  router.delete('/:id', (req, res) => {
+    const result = cancelBooking(db, req.params.id);
+    if (result === 'not-found') {
+      throw new HttpError(404, 'not_found', `Бронь не найдена: ${req.params.id}`);
+    }
+    res.status(204).end();
   });
 
   return router;
