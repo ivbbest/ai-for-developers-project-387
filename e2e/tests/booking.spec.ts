@@ -66,6 +66,47 @@ test.describe.serial('бронирование: полный путь гостя
   });
 });
 
+test.describe.serial('отмена брони (issue #12)', () => {
+  test('запись → номер на успехе → отмена по ссылке → слот свободен и берётся снова', async ({ page }) => {
+    // idx7 на meet-30 = 12:00–12:30 MSK: не пересекается с бронями других
+    // сценариев (meet-15 idx0/3/12, meet-30 idx5)
+    await openGrid(page, 'meet-30');
+    await slotRow(page, 7).click();
+    await page.getByRole('button', { name: 'Продолжить' }).click();
+    await page.getByPlaceholder('Имя').fill('Э2Е Отмена');
+    await page.getByPlaceholder('Email').fill('cancel@example.com');
+    await page.getByRole('button', { name: 'Подтвердить запись' }).click();
+    await expect(page.getByText('Бронь подтверждена. До встречи!')).toBeVisible();
+
+    // номер брони — capability отмены: страница подтверждения обязана его
+    // показать (критерий #12: «идентификатор, который гость получает при записи»)
+    const bookingId = (await page.getByTestId('booking-id').textContent())?.trim() ?? '';
+    expect(bookingId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+
+    await page.getByRole('link', { name: 'Отменить бронь' }).click();
+    await expect(page).toHaveURL(new RegExp(`/cancel/${bookingId}$`));
+    await page.getByRole('button', { name: 'Да, отменить' }).click();
+    await expect(page.getByText('Бронь отменена')).toBeVisible();
+
+    // слот сразу свободен в сетке и реально берётся повторно
+    await openGrid(page, 'meet-30');
+    await expect(slotRow(page, 7)).toContainText('Свободно');
+    await expect(slotRow(page, 7)).toBeEnabled();
+    await slotRow(page, 7).click();
+    await page.getByRole('button', { name: 'Продолжить' }).click();
+    await page.getByPlaceholder('Имя').fill('Э2Е Повторно');
+    await page.getByPlaceholder('Email').fill('again@example.com');
+    await page.getByRole('button', { name: 'Подтвердить запись' }).click();
+    await expect(page.getByText('Бронь подтверждена. До встречи!')).toBeVisible();
+  });
+
+  test('отмена по несуществующему номеру — «не найдена», не пустой экран и не 500', async ({ page }) => {
+    await page.goto('/cancel/00000000-0000-4000-8000-000000000000');
+    await page.getByRole('button', { name: 'Да, отменить' }).click();
+    await expect(page.getByText('Бронь не найдена')).toBeVisible();
+  });
+});
+
 test.describe.serial('конфликт при бронировании (E2)', () => {
   test('вторая вкладка, не видевшая бронь, получает 409 и ссылку на рефреш', async ({ browser }) => {
     // idx5 на сетке meet-30 = 11:30–12:00 MSK; бронь первого теста (meet-15

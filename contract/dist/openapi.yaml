@@ -72,6 +72,31 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Booking'
+  /bookings/{id}:
+    delete:
+      operationId: GuestApi_cancelBooking
+      description: 'Отмена брони по id: id — capability, гость получает его при записи (номер и ссылка на странице подтверждения). 204 — отменена или уже отменена (идемпотентно); неизвестный id — 404, состояние «отменена» от «не существует» не отличается'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: There is no content to send for this request, but the headers may be useful.
+        '404':
+          description: '404 not_found: бронь не найдена или уже отменена (E21)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                id не найден:
+                  summary: id не найден
+                  value:
+                    code: not_found
+                    message: 'Бронь не найдена: 6f1f2a34-0000-0000-0000-000000000000'
   /event-types:
     get:
       operationId: GuestApi_listEventTypes

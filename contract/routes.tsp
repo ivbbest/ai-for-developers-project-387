@@ -22,6 +22,15 @@ model NotFoundError extends Response<404> {
   body: Error;
 }
 
+// Общая NotFoundError описана про типы (E6); для отмены брони (E21) тот же
+// 404, но описание в openapi берётся из @doc модели и не переопределяется
+// на месте использования — отсюда отдельная модель (замечание ревью PR #40)
+@doc("404 not_found: бронь не найдена или уже отменена (E21)")
+model BookingNotFoundError extends Response<404> {
+  @body
+  body: Error;
+}
+
 @doc("409 slot_conflict: пересечение интервалов с существующей бронью (E1, E2, E15)")
 model SlotConflictError extends Response<409> {
   @body
@@ -91,6 +100,20 @@ interface GuestApi {
   createBooking(
     @body body: BookingCreate,
   ): CreatedBookingResponse | BadRequestError | NotFoundError | SlotConflictError | PayloadTooLargeError;
+
+  // NoContentResponse (TypeSpec.Http) — штатный 204 без тела: именованная
+  // model extends Response<204> заводит в openapi content+схему на 204, и
+  // prism-proxy затем считает пустое тело бэка нарушением схемы
+  @delete
+  @route("/bookings/{id}")
+  @doc("Отмена брони по id: id — capability, гость получает его при записи (номер и ссылка на странице подтверждения). 204 — отменена или уже отменена (идемпотентно); неизвестный id — 404, состояние «отменена» от «не существует» не отличается")
+  @opExample(
+    #{
+      returnType: #{ statusCode: 404, body: #{ code: "not_found", message: "Бронь не найдена: 6f1f2a34-0000-0000-0000-000000000000" } },
+    },
+    #{ title: "id не найден" }
+  )
+  cancelBooking(@path id: string): NoContentResponse | BookingNotFoundError;
 }
 
 @doc("Владелец: фиксированный профиль { name, email }, без регистрации и авторизации (по курсу); ручки молча принадлежат владельцу (Owner — документационная сущность, не модель)")

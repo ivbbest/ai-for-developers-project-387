@@ -1,4 +1,4 @@
-// Стаб контракта (шаг 2.1b): in-memory реализация всех 5 ручек открытого
+// Стаб контракта (шаг 2.1b): in-memory реализация всех 6 ручек открытого
 // контракта contract/dist/openapi.yaml. Вторичный источник правды — сверяется
 // с контрактом; Prism для этого не годится (не хранит состояние — «бронь →
 // Занято» не показать). Dev-инструмент этапа 2, в прод не попадает.
@@ -19,6 +19,9 @@ const state = {
     { id: 'meet-30', title: 'Встреча 30 минут', description: 'Созвон на полчаса', durationMinutes: 30 },
   ],
   bookings: [],
+  // отменённые id: повторная отмена идемпотентна (204), как в бэкенде,
+  // где бронь остаётся строкой со status='cancelled'
+  cancelledIds: new Set(),
 };
 
 const overlaps = (start, end) =>
@@ -162,6 +165,18 @@ app.post('/api/bookings', (req, res) => {
 app.get('/api/bookings', (_req, res) => {
   const nowIso = new Date().toISOString();
   res.json(state.bookings.filter((b) => b.start >= nowIso).sort((a, b) => a.start.localeCompare(b.start)));
+});
+
+app.delete('/api/bookings/:id', (req, res) => {
+  const id = req.params.id;
+  const i = state.bookings.findIndex((b) => b.id === id);
+  if (i >= 0) {
+    state.bookings.splice(i, 1);
+    state.cancelledIds.add(id);
+    return res.status(204).end();
+  }
+  if (state.cancelledIds.has(id)) return res.status(204).end();
+  return error(res, 404, 'not_found', `Бронь не найдена: ${id}`);
 });
 
 app.post('/api/event-types', (req, res) => {

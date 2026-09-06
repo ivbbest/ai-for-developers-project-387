@@ -6,6 +6,7 @@ import {
   findOverlaps,
   insertBooking,
   createBookingIfFree,
+  cancelBooking,
   listUpcoming,
   toIsoUtc,
   InvalidDateError,
@@ -119,5 +120,47 @@ describe('хранилище: схема, seed, репозитории', () => {
     insertBooking(db, booking({ start: '2026-09-11T09:00:00.000Z', end: '2026-09-11T09:15:00.000Z' }));
     const upcoming = listUpcoming(db, '2026-09-11T00:00:00.000Z').map((b) => b.start);
     expect(upcoming).toEqual(['2026-09-11T09:00:00.000Z', '2026-09-12T09:00:00.000Z']);
+  });
+
+  it('cancelBooking: освобождает слот и список, повтор идемпотентен, исход — история', () => {
+    insertBooking(db, booking({ id: 'c1', start: '2026-09-10T09:00:00.000Z', end: '2026-09-10T09:15:00.000Z' }));
+    expect(cancelBooking(db, 'c1')).toBe('cancelled');
+    expect(findOverlaps(db, '2026-09-10T09:00:00.000Z', '2026-09-10T09:15:00.000Z')).toHaveLength(0);
+    expect(listUpcoming(db, '2026-09-01T00:00:00.000Z')).toHaveLength(0);
+    expect(cancelBooking(db, 'c1')).toBe('already');
+    expect(cancelBooking(db, 'no-such-id')).toBe('not-found');
+    // мягкая отмена: строка остаётся (status), а не DELETE — идемпотентность
+    // повторного вызова без различения «не существует»/«уже отменена»
+    expect(db.prepare('SELECT status FROM bookings WHERE id = ?').get('c1')).toEqual({ status: 'cancelled' });
+  });
+
+  it('миграция: существующая БД без колонки status получает её с дефолтом active', () => {
+    // схема до фичи отмены (v1.0.3): bookings без status — этот путь мигрирует
+    // ALTER-ом в migrate(); без теста ветка «старый файл БД» не выполняется
+    // ни разу (остальные сюиты строят схему заново) — замечание ревью PR #40
+    const legacy = openDb(':memory:');
+    legacy.exec(`
+      CREATE TABLE event_types (
+        id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT,
+        duration_minutes INTEGER NOT NULL CHECK (duration_minutes BETWEEN 5 AND 540 AND duration_minutes % 5 = 0)
+      );
+      CREATE TABLE bookings (
+        id TEXT PRIMARY KEY, event_type_id TEXT NOT NULL REFERENCES event_types(id),
+        start TEXT NOT NULL, end TEXT NOT NULL CHECK (end > start),
+        name TEXT NOT NULL, email TEXT NOT NULL, notes TEXT, created_at TEXT NOT NULL
+      );
+      INSERT INTO event_types VALUES ('meet-15', 't', NULL, 15);
+      INSERT INTO bookings VALUES ('legacy-1', 'meet-15', '2026-09-10T09:00:00.000Z',
+        '2026-09-10T09:15:00.000Z', 'Г', 'g@example.com', NULL, '2026-01-01T00:00:00.000Z');
+    `);
+    migrate(legacy);
+    const cols = legacy.prepare('PRAGMA table_info(bookings)').all() as { name: string }[];
+    expect(cols.map((c) => c.name)).toContain('status');
+    // старые строки стали active; мягкая отмена работает на них сразу
+    expect(legacy.prepare('SELECT status FROM bookings WHERE id = ?').get('legacy-1')).toEqual({ status: 'active' });
+    expect(cancelBooking(legacy, 'legacy-1')).toBe('cancelled');
+    expect(listUpcoming(legacy, '2026-09-01T00:00:00.000Z')).toHaveLength(0);
+    // повторный migrate() идемпотентен: ALTER не выполняется второй раз
+    expect(() => migrate(legacy)).not.toThrow();
   });
 });

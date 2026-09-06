@@ -18,7 +18,10 @@ CREATE TABLE IF NOT EXISTS bookings (
   name           TEXT NOT NULL,
   email          TEXT NOT NULL,
   notes          TEXT,
-  created_at     TEXT NOT NULL
+  created_at     TEXT NOT NULL,
+  -- отмена (issue #12) — мягкая: слот освобождается фильтрами «active»,
+  -- повторная отмена отвечает идемпотентно, а строка остаётся историей
+  status         TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'cancelled'))
 );
 
 -- пересечения ищутся по двум границам интервала: составной индекс даёт

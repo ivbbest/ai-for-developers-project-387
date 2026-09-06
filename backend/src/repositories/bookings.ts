@@ -53,7 +53,7 @@ export function findOverlaps(db: Db, start: string, end: string): Booking[] {
   const rows = db
     .prepare(
       `SELECT id, event_type_id, start, end, name, email, notes, created_at
-       FROM bookings WHERE ${OVERLAP_CLAUSE} ORDER BY start`,
+       FROM bookings WHERE status = 'active' AND ${OVERLAP_CLAUSE} ORDER BY start`,
     )
     .all({ start: toIsoUtc(start), end: toIsoUtc(end) }) as BookingRow[];
   return rows.map(toBooking);
@@ -101,8 +101,26 @@ export function listUpcoming(db: Db, fromIso: string): Booking[] {
   const rows = db
     .prepare(
       `SELECT id, event_type_id, start, end, name, email, notes, created_at
-       FROM bookings WHERE start >= ? ORDER BY start`,
+       FROM bookings WHERE start >= ? AND status = 'active' ORDER BY start`,
     )
     .all(toIsoUtc(fromIso)) as BookingRow[];
   return rows.map(toBooking);
+}
+
+export type CancelResult = 'cancelled' | 'already' | 'not-found';
+
+// Отмена — мягкая (status='cancelled'): слот свободен для пересечений и
+// сетки, «уже отменена» отвечает идемпотентно (критерий приёмки #12),
+// несуществовавшая и чужая бронь неразличимы — оба 404
+export function cancelBooking(db: Db, id: string): CancelResult {
+  const tx = db.transaction((): CancelResult => {
+    const row = db.prepare('SELECT status FROM bookings WHERE id = ?').get(id) as
+      | { status: 'active' | 'cancelled' }
+      | undefined;
+    if (!row) return 'not-found';
+    if (row.status === 'cancelled') return 'already';
+    db.prepare(`UPDATE bookings SET status = 'cancelled' WHERE id = ?`).run(id);
+    return 'cancelled';
+  });
+  return tx();
 }

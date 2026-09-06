@@ -4,6 +4,7 @@ import { AdminNewTypePage } from './routes/admin-new-type';
 import { AdminPage } from './routes/admin';
 import { BookSlotPage } from './routes/book-slot';
 import { BookTypePage } from './routes/book';
+import { CancelBookingPage } from './routes/cancel';
 import { ConfirmPage } from './routes/confirm';
 import { HomePage } from './routes/home';
 import { NotFoundPage } from './routes/not-found';
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/book/:typeId" element={<BookSlotPage />} />
           <Route path="/book/:typeId/confirm" element={<ConfirmPage />} />
           <Route path="/book/:typeId/success" element={<SuccessPage />} />
+          <Route path="/cancel/:bookingId" element={<CancelBookingPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/admin/new-type" element={<AdminNewTypePage />} />
           <Route path="*" element={<NotFoundPage />} />

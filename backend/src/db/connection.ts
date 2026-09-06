@@ -29,4 +29,11 @@ export function openDb(path: string = defaultDbPath()): Db {
 
 export function migrate(db: Db): void {
   db.exec(SCHEMA_SQL);
+  // CREATE TABLE IF NOT EXISTS не трогает существующие файлы: колонка status
+  // (отмена брони, issue #12) добавляется ALTER-ом — иначе старые локальные
+  // БД и volume-смонтированные данные упали бы на «no such column: status»
+  const cols = db.prepare('PRAGMA table_info(bookings)').all() as { name: string }[];
+  if (!cols.some((c) => c.name === 'status')) {
+    db.exec(`ALTER TABLE bookings ADD COLUMN status TEXT NOT NULL DEFAULT 'active'`);
+  }
 }
