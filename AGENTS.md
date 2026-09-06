@@ -20,11 +20,11 @@
 |---|---|---|
 | `AGENTS.md` | Этот файл — правила и контекст проекта | да |
 | `README.md` | Описание проекта; по финальному шагу курса — таблица воркфлоу (событие, модель, назначение, где смотреть прогоны) | да |
-| `docs/` | `reading-guide.md` — путеводитель; остальная документация переедет с кодом на шаге 1; спеки — `docs/specs/` | да |
+| `docs/` | `reading-guide.md` — путеводитель; `owner-guide.md` — гид владельца (суть, запуск с нуля, грабли); продуктовая документация и план развития; спеки — `docs/specs/` | да |
 | `.github/workflows/hexlet-check.yml` | Автотесты Хекслета, **не удалять и не переименовывать** | да |
 | `.github/workflows/opencode*.yml` | Воркфлоу агента: интерактив, триаж, авторевью, расписание (создаются на шагах 2–5) | да |
 | `.agents/tasks.md` | Реестр/чек-лист задач проекта | да |
-| `.agents/context.md`, `.agents/mem/` | Память сессии (журнал, индекс фактов, уроки); `archive/` — локальный архив, вне git | да |
+| `.agents/context.md`, `.agents/mem/` | Память сессии (журнал, индекс фактов, уроки); `archive/` — единственная архивная папка, вне git | да |
 | `.opencode/` | Скиллы проекта (локально) | нет |
 | `input/` | Входные материалы курса (исключён локально через `.git/info/exclude`) | нет |
 | `.env` | Секреты — только пользователь | нет |
@@ -40,14 +40,14 @@ Linux-`node` на хосте каждая команда — через dev-об
 ```bash
 npm ci                                          # из корня, поднимает workspaces
 npm run compile -w @cal-com/contract            # TypeSpec → contract/dist/openapi.yaml (артефакт коммитится)
-npm run smoke -w @cal-com/contract              # Prism-smoke контракта, 27 проверок
-npm run smoke -w @cal-com/mock-server           # smoke стаба, 46 проверок
-npm test -w backend                             # vitest, 72 теста (71 декларация + 1 генерируется циклом)
-npm run contract:check -w backend               # prism-proxy, 9 проверок + гейт Violation
+npm run smoke -w @cal-com/contract              # Prism-smoke контракта, 30 проверок
+npm run smoke -w @cal-com/mock-server           # smoke стаба, 54 проверки
+npm test -w backend                             # vitest, 78 тестов (77 деклараций + 1 генерируется циклом)
+npm run contract:check -w backend               # prism-proxy, 13 проверок + гейт Violation
 npm run typecheck -w backend
 npm run build -w backend
 npm run lint -w frontend
-./scripts/e2e.sh                                # Playwright, 9 сценариев
+./scripts/e2e.sh                                # Playwright, 12 сценариев
 docker build -t cal-com .                       # прод-образ (multi-stage), smoke запущенного контейнера
 ```
 
@@ -86,7 +86,7 @@ docker build -t cal-com .                       # прод-образ (multi-sta
 - **Перед каждым коммитом**: прогнать доступные проверки, посмотреть `git diff`
   (без секретов, PII, мусора); один коммит = один логический шаг.
 - **Тесты обязательны**: изменение без тестов соответствующего слоя не считается
-  законченным. Для шагов этого курса «тестом» является проверяемый след в GitHub:
+  законченным. Для шагов этого курса «тест» — проверяемый след в GitHub:
   прогон Actions, ответ агента в issue, коммиты в PR, артефакт отчёта.
 - `git clone`/`fetch`/`status`/`diff`/`log` (чтение) — можно всегда.
 - **Публичная гигиена**: в коммитах, PR, коде и product-документации — без формулировок
