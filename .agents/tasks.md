@@ -705,6 +705,45 @@ triage-воркфлоу, постановка «что считается исп
 минимальны (таблица), расходы и решения описаны в README; таблица воркфлоу
 с живыми ссылками.
 
+### Сверка требований (6.10): user-story → доказательство
+
+28 пунктов разделов «Требования» всех шести шагов; ссылка — run/issue/PR/SHA.
+
+| # | Шаг | Требование (сжато) | Доказательство |
+|---|---|---|---|
+| 1 | 1 | Код в новом репо, автотест зелёный | PR #2 → main `459e8c2`; hexlet-check [33906183569](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906183569) (PR), [33906806753](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33906806753) (main) |
+| 2 | 1 | План: ≥1 фича + ≥1 баг, понятны без пересказа | `docs/development-plan.md`, PR #7 → main `1a888ea` (баг воспроизведён, фича подтверждена) |
+| 3 | 2 | GitHub App установлен | ответ `opencode-agent` в #6 (P.4 владельцем); run 33950008593 |
+| 4 | 2 | Воркфлоу в main замержен | PR #5 → main `6c7f2d6`; итерация guard PR #8 → `d00b1f4` |
+| 5 | 2 | `types: [created]` + запуск по команде | `opencode.yml` (2.3a–c); обычный комментарий без команды → skipped [33950716153](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33950716153) |
+| 6 | 2 | `id-token: write` + `persist-credentials: false` | `opencode.yml` (2.3d–e), аудит 6.3 |
+| 7 | 2 | Ключ в Secrets, в файлах нет | секрет `OPENCODE_API_KEY` (имя, 05.09); секрет-греп 2.5 чист |
+| 8 | 2 | Issue с ответом агента + прогон виден | [#6, комментарий App](https://github.com/ivbbest/ai-for-developers-project-387/issues/6#issuecomment-5549987934) + run [33950008593](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33950008593) |
+| 9 | 3 | Issue-жалоба без готового решения | [#10](https://github.com/ivbbest/ai-for-developers-project-387/issues/10) (текст из плана) |
+| 10 | 3 | Команда + ответ с разбором (причина/код/путь) | [#10, разбор](https://github.com/ivbbest/ai-for-developers-project-387/issues/10#issuecomment-5550099417), run [33951021411](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33951021411) |
+| 11 | 3 | Автотриаж на `issues` с prompt, отработал | PR #11 в main; [#12 разобран без команды](https://github.com/ivbbest/ai-for-developers-project-387/issues/12), run [33951433854](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33951433854) |
+| 12 | 3 | В issue записано, что считается исправлением | критерии в [#10](https://github.com/ivbbest/ai-for-developers-project-387/issues/10#issuecomment-5550107681) и #12 |
+| 13 | 4 | PR агента связан с issue | PR #15 (`Closes #10`, ветка `opencode/issue10-*`) |
+| 14 | 4 | Оба вида замечаний в PR | общий [#15 comment](https://github.com/ivbbest/ai-for-developers-project-387/pull/15#issuecomment-5550279913) + инлайн [discussion_r3939865697](https://github.com/ivbbest/ai-for-developers-project-387/pull/15#discussion_r3939865697) |
+| 15 | 4 | Правки в той же ветке видны по коммитам | `782a04d` и др. в #15, прогоны 33952550739/33952563064/33952874631 |
+| 16 | 4 | Авторевью на `pull_request` с prompt оставил замечания | замечания по строкам на PR #40 ([run 34019202353](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/34019202353), оба исправлены); вердикты APPROVED: #16 [33953894988](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/33953894988), #40 [34020094158](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/34020094158) |
+| 17 | 4 | Коммиты агента Conventional, release-PR создан | reword 4.6; PR #17 → main `5875ed8`, тег `cal-com-v1.0.3`; цикл повторился на #40 → release-PR #41 (1.1.0) |
+| 18 | 5 | `schedule` + `workflow_dispatch` + cron | `opencode-schedule.yml:9-12` |
+| 19 | 5 | prompt + 4 права write | файл (5.1b/5.3, D7) |
+| 20 | 5 | Не чаще раза в сутки | cron `0 3 * * *` (ежедневно, D8) |
+| 21 | 5 | ≥1 успешный прогон, отчёт артефактом/в задаче | ночной [34019912835](https://github.com/ivbbest/ai-for-developers-project-387/actions/runs/34019912835) success + артефакты; dispatch 33960207196/33965810564/33969893991 |
+| 22 | 5 | ≥1 issue по находкам | [#25](https://github.com/ivbbest/ai-for-developers-project-387/issues/25) (метка perf-report, реальные цифры) |
+| 23 | 6 | Во всех воркфлоу фильтр от ботов/App | 6.1a прогонно + 6.1b статически; анти-петля #40: ответ App → только skipped (34020381412) |
+| 24 | 6 | `mentions` явно или причина в README | `opencode.yml:54` + README (6.2) |
+| 25 | 6 | Права по воркфлоу, write только где нужно | README-таблица (6.3); trim прав #32 |
+| 26 | 6 | README: таблица воркфлоу (событие/модель/где смотреть) | README «Воркфлоу агента» (PR #27) |
+| 27 | 6 | Решение по `share` записано | `share: false` ×4 + абзац в README (6.6) |
+| 28 | 6 | Самооценка в README/задаче | README «Самооценка процесса» (6.8) |
+
+Итог: 28/28. Требование «работает по расписанию» закрыто ночным прогоном
+34019912835 (не dispatch-подменой); задержка первого cron (03:00 → 07:43 UTC) —
+особенность best-effort-планировщика GitHub, урок в learnings.
+
 ---
 
 ## Справочно: стек переносимого приложения (финализирован в 386)
