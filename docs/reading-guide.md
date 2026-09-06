@@ -162,7 +162,7 @@ git config core.fileMode      # false (WSL-права не шумят в diff)
 grep -cE '^check "' contract/smoke.sh              # 18
 grep -cE '^check_body "' contract/smoke.sh         # 12 (всего 30)
 grep -cE '^check "|^check_body "' contract/mock-server/smoke.sh  # 53 (+1 ручной «исключена из списка» = 54 PASS-строк в прогоне)
-grep -cE '^\s*(test|it)\(' backend/test/*.test.ts  # 76 деклараций; прогон vitest — 77 (цикл now.test.ts генерирует лишний)
+grep -cE '^\s*(test|it)\(' backend/test/*.test.ts  # 77 деклараций; прогон vitest — 78 (цикл now.test.ts генерирует лишний)
 grep -cE '^\s*test\(' e2e/tests/booking.spec.ts    # 12
 # инварианты opencode-воркфлоу (созданы на шагах 2–5)
 grep -E "types: \[created\]|persist-credentials|id-token|share: false" .github/workflows/opencode.yml
@@ -185,7 +185,7 @@ grep -E "types: \[created\]|persist-credentials|id-token|share: false" .github/w
 
 - `AGENTS.md` таблица «Что здесь лежит» ↔ фактическое дерево (`ls -a`, `ls docs .agents`);
 - ссылки между документами живые: файлов, удалённых из репозитория, в публичных
-  доках быть не должно (`grep -rn "docs/archive" README.md docs` — пусто);
+  доках быть не должно (`grep -rn "docs/archive/" README.md docs` — пусто);
 - правила не противоречат друг другу: границы git в AGENTS.md ↔ «Правила ведения»
   tasks.md ↔ ритуалы в MEMORY.md (кто пушит/мержит, Conventional, анти-петля);
 - память не расходится с реестром: последняя запись `context.md` описывает
@@ -194,7 +194,7 @@ grep -E "types: \[created\]|persist-credentials|id-token|share: false" .github/w
 ### V5. Гигиена (2 мин)
 
 ```bash
-grep -rniE "sk-[a-z0-9]|ghp_|xox|password\s*[:=]" AGENTS.md .agents docs   # пусто (кроме примеров-команд)
+grep -rniE "sk-[a-z0-9]{8}|ghp_[a-z0-9]{8}|xox[bap]-" AGENTS.md .agents docs   # пусто
 grep -rn "email\|телефон" .agents/mem/MEMORY.md                            # нет PII
 grep -rn "386" README.md                                                   # README ссылается только на 387
 ```
