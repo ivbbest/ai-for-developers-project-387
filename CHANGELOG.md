@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/ivbbest/ai-for-developers-project-387/compare/cal-com-v1.1.0...cal-com-v1.1.1) (2026-09-07)
+
+
+### Performance Improvements
+
+* маршрутный code splitting — day-picker и формы уходят из стартового чанка ([#46](https://github.com/ivbbest/ai-for-developers-project-387/issues/46)) ([3928d4c](https://github.com/ivbbest/ai-for-developers-project-387/commit/3928d4ca7078a813a6c20386b2d0a7e1ba745dc4))
+
 ## [1.1.0](https://github.com/ivbbest/ai-for-developers-project-387/compare/cal-com-v1.0.3...cal-com-v1.1.0) (2026-09-06)
 
 
