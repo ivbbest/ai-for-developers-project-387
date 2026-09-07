@@ -1,14 +1,44 @@
+import { lazy, Suspense } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { CalendarDaysIcon } from 'lucide-react';
-import { AdminNewTypePage } from './routes/admin-new-type';
-import { AdminPage } from './routes/admin';
-import { BookSlotPage } from './routes/book-slot';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BookTypePage } from './routes/book';
-import { CancelBookingPage } from './routes/cancel';
-import { ConfirmPage } from './routes/confirm';
 import { HomePage } from './routes/home';
-import { NotFoundPage } from './routes/not-found';
-import { SuccessPage } from './routes/success';
+
+// Лендинг и каталог — статичные импорты: это первый экран гостя (его и меряет
+// Lighthouse), задержка на догрузку chunk здесь была бы регрессом. Остальные
+// маршруты — lazy: react-day-picker (сетка слотов), формы админки и страница
+// отмены уходят из стартового бандла в чанки, которые грузятся по навигации
+const AdminNewTypePage = lazy(() =>
+  import('./routes/admin-new-type').then((m) => ({ default: m.AdminNewTypePage })),
+);
+const AdminPage = lazy(() => import('./routes/admin').then((m) => ({ default: m.AdminPage })));
+const BookSlotPage = lazy(() =>
+  import('./routes/book-slot').then((m) => ({ default: m.BookSlotPage })),
+);
+const CancelBookingPage = lazy(() =>
+  import('./routes/cancel').then((m) => ({ default: m.CancelBookingPage })),
+);
+const ConfirmPage = lazy(() =>
+  import('./routes/confirm').then((m) => ({ default: m.ConfirmPage })),
+);
+const NotFoundPage = lazy(() =>
+  import('./routes/not-found').then((m) => ({ default: m.NotFoundPage })),
+);
+const SuccessPage = lazy(() =>
+  import('./routes/success').then((m) => ({ default: m.SuccessPage })),
+);
+
+// Fallback по габаритам — как карточка страницы: мгновенная отрисовка без
+// последующего layout shift (CLS-аудит Lighthouse меряет именно /)
+function PageSkeleton() {
+  return (
+    <div className="mx-auto max-w-md space-y-3" data-testid="page-loading">
+      <Skeleton className="h-40 w-full rounded-xl" />
+      <Skeleton className="mx-auto h-9 w-40 rounded-lg" />
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -40,17 +70,19 @@ export default function App() {
         </nav>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/book" element={<BookTypePage />} />
-          <Route path="/book/:typeId" element={<BookSlotPage />} />
-          <Route path="/book/:typeId/confirm" element={<ConfirmPage />} />
-          <Route path="/book/:typeId/success" element={<SuccessPage />} />
-          <Route path="/cancel/:bookingId" element={<CancelBookingPage />} />
-          <Route path="/admin" element={<AdminPage />} />
-          <Route path="/admin/new-type" element={<AdminNewTypePage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
+        <Suspense fallback={<PageSkeleton />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/book" element={<BookTypePage />} />
+            <Route path="/book/:typeId" element={<BookSlotPage />} />
+            <Route path="/book/:typeId/confirm" element={<ConfirmPage />} />
+            <Route path="/book/:typeId/success" element={<SuccessPage />} />
+            <Route path="/cancel/:bookingId" element={<CancelBookingPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/new-type" element={<AdminNewTypePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
       </main>
     </>
   );

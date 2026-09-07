@@ -40,6 +40,10 @@ test.describe.serial('бронирование: полный путь гостя
     await slotRow(page, 3).click();
     await page.getByRole('button', { name: 'Продолжить' }).click();
     await expect(page).toHaveURL(/\/confirm\?start=/);
+    // URL меняется до того, как lazy-чанк confirm доедет (React держит старое
+    // дерево до готовности нового): ждём маркер именно страницы подтверждения —
+    // поле «Имя» есть только на ней
+    await expect(page.getByPlaceholder('Имя')).toBeVisible();
     // инфо-панель: время выбранного слота (то же, что в сетке) и посчитанный
     // сервером счётчик свободных — не «…» из незагруженного состояния.
     // Локатор скоупнут к InfoBox: на странице перехода сетка и инфо-панель
@@ -121,9 +125,13 @@ test.describe.serial('конфликт при бронировании (E2)', ()
     await slotRow(pageB, 5).click();
     await pageB.getByRole('button', { name: 'Продолжить' }).click();
     // ждём перехода на confirm у обеих: на странице сетки слово «Свободно» —
-    // в 18 кнопках-слотах, локатор счётчика не был бы уникален
+    // в 18 кнопках-слотах, локатор счётчика не был бы уникален. URL тут не
+    // маркер: с lazy-роутами он меняется раньше, чем чанк confirm смонтируется,
+    // — ждём поле «Имя», которое есть только на странице подтверждения
     await expect(pageA).toHaveURL(/\/confirm\?start=/);
     await expect(pageB).toHaveURL(/\/confirm\?start=/);
+    await expect(pageA.getByPlaceholder('Имя')).toBeVisible();
+    await expect(pageB.getByPlaceholder('Имя')).toBeVisible();
 
     // счётчик «Свободно» на форме pageB загружен до брони pageA — снимок для
     // проверки авто-рефреша после 409 (без клика по ссылке)
