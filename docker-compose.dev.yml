@@ -1,5 +1,5 @@
 # Dev-обёртка: все команды разработки (tsp, vite, npm, тесты) — в контейнере node:24.
-# Причина: в WSL нет Linux-`node` (npm — Windows-обёртка), DrvFs /mnt/e медленный,
+# Причина: в WSL нет Linux-`node` (npm — Windows-обёртка), DrvFs-том Windows медленный,
 # а Linux-контейнер совпадает с прод-образом (нативные модули консистентны).
 # Использование: ./scripts/dev.sh <cmd…>  (или docker compose -f docker-compose.dev.yml run --rm dev <cmd…>)
 services:
